@@ -11136,7 +11136,8 @@ notes = "M16a: the whole header: struct mpi_dmamem (malloc'ed, &'static), mpi_cc
 [[file]]
 c = "sys/dev/ic/mpi.c"
 rust = "sys/dev/ic/mpi.rs"
-status = "todo"
+status = "wip"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 deps = ["sys/dev/ic/mpireg.h", "sys/dev/ic/mpivar.h", "sys/scsi/scsiconf.c"]
 notes = "M16: mpi(4); criterion: QEMU's mptsas1068 disk mounted, both archs"
 
