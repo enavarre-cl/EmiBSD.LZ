@@ -22,7 +22,7 @@ Blockers:
 - A `diagnostic` MP kernel panics at boot (`uvm_page_physload: page size not set!`).
 - Statistics counters the C bumps unlocked stay `Cell`s (docs/ARCHITECTURE.md, M11e).
 - Open flakes: amd64 serial cut at QEMU exit (M16f); host test `no idleproc set on CPU0`, ~1 in
-  80 loaded runs; EDK2's UhciDxe ASSERT before the kernel on arm64 (~1 in 5 uhci boots; M16b).
+  80 loaded runs; EDK2's UhciDxe ASSERT before the kernel on arm64 (~1 in 5 uhci boots; M16b; booted once more, EXT-1).
 
 Decisions pending (the user's): the scope section; a SeaBIOS path for vga(4)'s text mode;
 Limine's retirement; the PC's CPU for vmm (M17); the Raspberry Pi 4 model; networking in M17;

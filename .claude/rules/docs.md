@@ -31,6 +31,9 @@ paths:
 - `docs/C_TO_RUST.md`: one row per idiom, columns C | Rust | Why. Add a row when an idiom is
   settled, not before.
 - `docs/ARCHITECTURE.md` records deviations from OpenBSD and the reason for each dependency.
+- `docs/EXTERNAL_BUGS.md` (the user's rule of 2026-10-09) logs every bug found in OpenBSD's C,
+  QEMU, EDK2 or a host tool, with evidence and how the port lives with it, in the commit that
+  meets it (its own "Rules" section). Nothing is reported upstream without the user.
 - `reference/PINNED.md` is tiny and machine-read (`Commit:` line); do not add prose there.
 - Refer to OpenBSD manuals as `name(section)`: `tsleep(9)`, `pledge(2)`, `com(4)`.
 - Cite C as `reference/openbsd-src/sys/<path>:<line>`; cite Rust as `sys/<path>:<line>`.
