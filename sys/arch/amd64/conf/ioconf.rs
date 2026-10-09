@@ -52,7 +52,8 @@
 //! `cdce* at uhub?`, `uftdi* at uhub?` and `ucom* at uftdi?` (M16b),
 //! `pcn* at pci?`, `ne* at pci?`, `fxp* at pci?`, `inphy* at mii?`, `dc* at pci?`,
 //! `lxtphy* at mii?` and `dcphy* at mii?` (M16c),
-//! `pckbc0 at isa? flags 0x00`, `pckbd* at pckbc?` and `wskbd* at pckbd? mux 1` (M16d),
+//! `pckbc0 at isa? flags 0x00`, `pckbd* at pckbc?`, `pms* at pckbc?`, `wskbd* at pckbd? mux 1`
+//! and `wsmouse* at pms? mux 0` (M16d),
 //! `isa0 at mainbus0`,
 //! `com0 at isa? port 0x3f8 irq 4`, `com1 at isa? port 0x2f8 irq 3`, `com2 at isa? port 0x3e8
 //! irq 5`, `com3 at isa? disable port 0x2e8 irq 9`; `pseudo-device pf`, `pseudo-device pflog`,
@@ -72,7 +73,7 @@
 //! other
 //! `audio*` (at `eap?`, `envy?`, ...), `pci*` at
 //! `pchb?`, and every device at `virtio?` but `vio*`, `vioblk*` and `vioscsi*`; every device at `uhub?` but `uhub*`, `umass*`, `uhidev*`, `uaudio*`, `cdce*`, `uftdi*` and `ugen*`, every device
-//! at `uhidev?` but `ukbd*`, `ums*`, `uwacom*` and `uhid*`, `pms* at pckbc?`, every `wskbd*` but the
+//! at `uhidev?` but `ukbd*`, `ums*`, `uwacom*` and `uhid*`, every `wskbd*` but the
 //! ones at `ukbd?` and `pckbd?`, every
 //! `wsmouse*` but the ones at `ums?` and `uwacom?`, every `ucom*` but the one at `uftdi?`;
 //! `mpath0 at root`; the other pseudo-devices (`pdevinit[]`). Each entry keeps `config(8)`'s
@@ -146,6 +147,7 @@ use crate::dev::pci::vga_pci::VGA_PCI_CA;
 use crate::dev::pci::virtio_pci::VIRTIO_PCI_CA;
 use crate::dev::pci::xhci_pci::XHCI_PCI_CA;
 use crate::dev::pckbc::pckbd::{PCKBD_CA, PCKBD_CD};
+use crate::dev::pckbc::pms::{PMS_CA, PMS_CD};
 use crate::dev::puc::com_puc::COM_PUC_CA;
 use crate::dev::pv::if_vio::{VIO_CA, VIO_CD};
 use crate::dev::pv::vioblk::{VIOBLK_CA, VIOBLK_CD};
@@ -384,14 +386,17 @@ const LN_PCKBCSLOT: i32 = 41;
 /// `pv[]` for children of `pckbd*` (`cfdata[85]`): the `wskbddev` attribute.
 const PV_PCKBD: &[i16] = &[85];
 
+/// `pv[]` for children of `pms*` (`cfdata[86]`): the `wsmousedev` attribute.
+const PV_PMS: &[i16] = &[86];
+
 /// `{0}`: the free slots `config(8)` leaves at the end of `cfdata[]` for UKC's `add`.
 const NFREE: usize = 8;
 
-/// `cfdata[]`: 87 entries, 88 with `MULTIPROCESSOR` (GENERIC.MP's `cpu* at mainbus?`).
+/// `cfdata[]`: 89 entries, 90 with `MULTIPROCESSOR` (GENERIC.MP's `cpu* at mainbus?`).
 const NCFDATA: usize = if cfg!(feature = "multiprocessor") {
-    88
+    90
 } else {
-    87
+    89
 };
 
 /// `cfdata[]`, edited by UKC (`boot -c`) before autoconfiguration reads it
@@ -1361,7 +1366,19 @@ pub static CFDATA: StaticCell<[Cfdata; NCFDATA + NFREE]> = StaticCell::new([
         LN_PCKBCSLOT,
         0,
     ),
-    // 86: wskbd* at pckbd? mux 1 (M16d)
+    // 86: pms* at pckbc? (M16d)
+    Cfdata::new(
+        &PMS_CA,
+        &PMS_CD,
+        0,
+        FSTATE_STAR,
+        LOC_PCKBCSLOT_UNK,
+        0,
+        PV_PCKBC,
+        LN_PCKBCSLOT,
+        0,
+    ),
+    // 87: wskbd* at pckbd? mux 1 (M16d)
     Cfdata::new(
         &WSKBD_CA,
         &WSKBD_CD,
@@ -1373,7 +1390,19 @@ pub static CFDATA: StaticCell<[Cfdata; NCFDATA + NFREE]> = StaticCell::new([
         LN_WSKBDDEV,
         0,
     ),
-    // 87: cpu* at mainbus? (GENERIC.MP, MULTIPROCESSOR): the application processors, unit 1
+    // 88: wsmouse* at pms? mux 0 (M16d)
+    Cfdata::new(
+        &WSMOUSE_CA,
+        &WSMOUSE_CD,
+        0,
+        FSTATE_STAR,
+        LOC_WSMOUSEDEV_MUX0,
+        0,
+        PV_PMS,
+        LN_WSMOUSEDEV,
+        0,
+    ),
+    // 89: cpu* at mainbus? (GENERIC.MP, MULTIPROCESSOR): the application processors, unit 1
     // on (cpu0 takes unit 0).
     #[cfg(feature = "multiprocessor")]
     Cfdata::new(&CPU_CA, &CPU_CD, 1, FSTATE_STAR, &[], 0, PV_MAINBUS, 0, 1),
