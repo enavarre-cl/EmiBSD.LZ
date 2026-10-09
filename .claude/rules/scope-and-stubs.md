@@ -13,6 +13,14 @@ The kernel is ported incrementally; most of OpenBSD is not here yet. These rules
   in `ports.toml`.
 - Never delete a code path because "we don't need it yet". Port it or stub it visibly.
 - Drivers for hardware QEMU does not expose: `status = "skipped"`, `notes = "deferred-driver: ..."`.
+- A QEMU device on which OpenBSD 8.0 itself fails (the user's rule of 2026-10-09): probe it
+  first (`cargo xtask diff-openbsd --arch A probe ...` with the same QEMU options); if OpenBSD
+  fails there too, its driver is not ported in a QEMU milestone. The failure goes into
+  `docs/EXTERNAL_BUGS.md` (the probe lines, the QEMU options, QEMU's model or the driver "to
+  analyse"), its rows stay `todo` with `notes = "M17: deferred ..."`, and the device moves to
+  M17's row (real hardware, where it can be tested). A faithful port could only reproduce the
+  failure, and fixing it would need a behavioural deviation or a change to QEMU. A cheap fix on
+  our side that stays faithful (an xtask or QEMU option, as the floppy in drive B) is still taken.
 - Licences (the user's rule of 2026-10-04, replacing the list of per-licence decisions): any
   licence or notice on a file in the pinned OpenBSD tree (`reference/openbsd-src`) is accepted
   without asking, for kernel ports and for the compiled userland alike; OpenBSD already accepted
