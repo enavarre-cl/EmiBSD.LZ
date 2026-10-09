@@ -28,5 +28,10 @@ pub mod isareg;
 pub mod isavar;
 pub mod lpt_isa;
 pub mod pckbc_isa;
+pub mod pcppi;
+pub mod pcppireg;
+pub mod pcppivar;
+pub mod spkr;
+pub mod spkrio;
 pub mod vga_isa;
 /* </CODE> */

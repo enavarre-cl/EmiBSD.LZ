@@ -11798,34 +11798,46 @@ notes = "M16: fd(4); criterion: a 1.44 MB image on QEMU's floppy read with mount
 [[file]]
 c = "sys/dev/isa/pcppireg.h"
 rust = "sys/dev/isa/pcppireg.rs"
-status = "todo"
-notes = "M16: PC speaker port bits"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "8667ab80e6dadc84e3dac2f60a27bef59c60facb"
+license = "none"
+notes = "M16d: PIT_ENABLETMR2, PIT_SPKRDATA, PIT_SPKR (u8, port B's bits); no licence text in the C; reference-backed test"
 
 [[file]]
 c = "sys/dev/isa/pcppivar.h"
 rust = "sys/dev/isa/pcppivar.rs"
-status = "todo"
-notes = "M16: pcppi_bell interface"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "3ddf41955e4c4abca52294395dec26d005ccea31"
+notes = "M16d: pcppi_tag_t (PcppiTag), struct pcppi_attach_args, PCPPI_BELL_SLEEP/POLL; pcppi_bell lives in pcppi.rs; license: Carnegie Mellon notice, kept whole; reference-backed test"
 
 [[file]]
 c = "sys/dev/isa/pcppi.c"
 rust = "sys/dev/isa/pcppi.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "60191b9dc720b4b92d10d2315fa2f574a8c358b5"
 deps = ["sys/dev/isa/pcppireg.h", "sys/dev/isa/pcppivar.h", "sys/dev/isa/isa.c"]
-notes = "M16: pcppi(4), the PC speaker and the console bell; criterion: the wsdisplay bell is heard through -machine pcspk-audiodev (coreaudio, by ear in play-audio) and recorded (wav, --expect-tone) in smoke; amd64 GENERIC only"
+notes = "M16d: the whole file: pcppi_match (port B's bit-0 toggle test), pcppi_attach (maps the i8254 and port B, hooks pcppi_kbd_bell into pckbd and hidkbd, NPCKBD and NHIDKBD > 0, attaches spkr), pcppi_bell (counter 2 square wave, PIT_SPKR, timeout or poll or sleep on pcppi_bell_stop's address), pcppi_bell_stop, pcppi_kbd_bell; IO_PPI added to isareg.rs; pcppi0 at isa? in amd64's ioconf (amd64 GENERIC only); license: Carnegie Mellon notice, kept whole; smoke-bell: the console bell reaches pcspk-audiodev"
 
 [[file]]
 c = "sys/dev/isa/spkrio.h"
 rust = "sys/dev/isa/spkrio.rs"
-status = "todo"
-notes = "M16: spkr(4) ioctls"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "a852cf0782f14036c0679c628ed0636f19f5df8d"
+license = "none"
+notes = "M16d: SPKRTONE, SPKRTUNE, tone_t (ToneT, AbiPod); the C's comment says duration is in 1/100 s, spkr.c passes milliseconds; no licence text in the C; host test of the ioctl numbers"
 
 [[file]]
 c = "sys/dev/isa/spkr.c"
 rust = "sys/dev/isa/spkr.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "28fa395d0d18074bc59e7428cc56e509db0f6944"
 deps = ["sys/dev/isa/pcppi.c", "sys/dev/isa/spkrio.h"]
-notes = "M16: spkr(4) plays a tune string on the PC speaker; amd64 GENERIC only"
+notes = "M16d: the whole file: tone, rest, the play string interpreter (playinit, playtone, playstring) over a copy of the play state with a Sound call-back (host-tested), spkrprobe/spkrattach, spkropen/close/write/ioctl (SPKRTONE, SPKRTUNE with copyin); the file-scope state is one StaticCell under the kernel lock; number and length arithmetic wraps where the C's int overflow is undefined, a division by zero after 26+ dots panics where the C traps (OpenBSD 8.0: integer divide fault in playtone, EXTERNAL_BUGS); SPKRDEBUG not carried; cdevsw 27 on amd64 (NSPKR 1); spkr0 at pcppi? in amd64's ioconf; license: BSD-4 (Eric S. Raymond), kept whole"
 
 [[file]]
 c = "sys/dev/usb/uwacom.c"
