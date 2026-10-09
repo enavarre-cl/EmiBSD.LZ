@@ -52,6 +52,10 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-6 | QEMU `pci-ohci` or OpenBSD ohci(4) | a write to a stick through ohci halts the controller | — | — | reproduced | faithful; criterion restated (M16b) | open, to analyse |
 | EXT-7 | QEMU `tulip` or OpenBSD dc(4) | `failed to force tx to idle state`, `watchdog timeout`, no traffic | — | — | reproduced | faithful; criterion restated (M16c) | open, to analyse |
 | EXT-8 | QEMU `igb` or OpenBSD em(4) | the 82576 attaches and is active but receives nothing, both archs | — | — | reproduced | faithful; criterion restated (M16c) | open, to analyse |
+| EXT-192 | QEMU `megasas`/`megasas-gen2` or OpenBSD mfi(4) | `mfi0: could not initialize firmware`, `mfi0: can't attach`, both archs | firmware/hardware | wrong result | reproduced | mfi(4) not ported: moved to M17 by the user | open, to analyse |
+| EXT-193 | QEMU `am53c974`/`dc390` or OpenBSD pcscp(4) | the disk's INQUIRY comes back empty after a Check Condition, sd1 unusable | firmware/hardware | wrong result | reproduced | ncr53c9x/pcscp not ported: moved to M17 by the user | open, to analyse |
+| EXT-194 | QEMU `ufs` or OpenBSD ufshci(4) | the LU attaches as sd1, then the boot hangs before `root on` (amd64) | firmware/hardware | wrong result (boot hangs) | reproduced | ufshci not ported: moved to M17 by the user | open, to analyse |
+| EXT-195 | QEMU `pvscsi` or OpenBSD vmwpvs(4) | `vmwpvs0: get configuration failed`: no scsibus | firmware/hardware | wrong result | reproduced | faithful; criterion restated (M16a) | open, to analyse |
 | EXT-23 | `sys/netinet/tcp_output.c:1195` | `tcp_softtso_chop` uses the IP header pointer after `m_pullup` | remote | memory corruption | claimed | fixed | open |
 | EXT-27 | `sys/nfs/nfs_serv.c:1151` | `nfsrv_create` frees the name buffer twice | remote | memory corruption | read | fixed | open |
 | EXT-137 | `sys/dev/ic/dc.c:2153` | receive trusts the descriptor's frame length | remote | memory corruption | read | fixed | open |
@@ -231,7 +235,7 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-78 | `sys/dev/softraid_raid5.c:608` | RAID 5 leaks a strip block on error | alloc-failure | leak | read | fixed | open |
 | EXT-79 | `sys/dev/softraid_raid6.c:632` | RAID 6 leaks blocks and ccbs on error | alloc-failure | leak | read | fixed | open |
 
-## Entries (EXT-1 to EXT-8)
+## Entries (EXT-1 to EXT-8, EXT-192 to EXT-195)
 
 ### EXT-1: EDK2 UhciDxe ASSERT on arm64 (QEMU firmware)
 
@@ -324,6 +328,63 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
   descriptors.
 - To analyse: whether QEMU's igb implements the legacy descriptor format the 82576 still
   supports.
+
+### EXT-192: megasas and megasas-gen2 fail firmware initialisation (QEMU megasas or mfi(4))
+
+- What: OpenBSD 8.0 (the diff-openbsd snapshot) on QEMU 11.1.2 with `-device megasas` (LSI
+  MegaRAID SAS 1078) or `-device megasas-gen2` (SAS2108, product 0x0079, which mfi(4)'s table
+  takes; QEMU has no MegaRAID Fusion device for mfii(4)), a `scsi-hd` at target 0
+  (`cargo xtask diff-openbsd --arch A --megasas FILE probe`, `--megasas-gen2`, M16a):
+  `mfi0 at pci0 dev 4 function 0 "Symbios Logic SAS1078" rev 0x00: apic 0 int 20` (gen2:
+  `"Symbios Logic MegaRAID SAS2108 GEN2"`; arm64 `dev 1 ... : irq`), then
+  `mfi0: could not initialize firmware` and `mfi0: can't attach` on both archs and both
+  models. The message is `mfi_initialize_firmware`'s failure
+  (`sys/dev/ic/mfi.c:754` at 3ce1f3f79392).
+- Port: mfi(4) and mfii(4) are not ported; moved to M17 (real hardware) by the user on
+  2026-10-09.
+- To analyse: what the MFI_CMD_INIT frame carries and what QEMU's megasas expects of it.
+
+### EXT-193: am53c974 and dc390 return an empty INQUIRY (QEMU am53c974 or pcscp(4))
+
+- What: OpenBSD 8.0 on QEMU 11.1.2 with `-device am53c974` (or `dc390`) and a `scsi-hd` at
+  target 0 (`diff-openbsd --arch amd64 --am53c974 FILE probe`, M16a):
+  `pcscp0 at pci0 dev 4 function 0 "AMD 53c974 PCscsi-PCI" rev 0x10: apic 0 int 20`,
+  `pcscp0: AM53C974, 40MHz`, `scsibus2 at pcscp0: 8 targets, initiator 7`,
+  `probe(pcscp0:0:0): Check Condition (error 0) on opcode 0x0`,
+  `sd1 at scsibus2 targ 0 lun 0: <, , >`, then `fdisk: opendev('sd1', 0x2): Device not
+  configured`.
+- Port: ncr53c9x and pcscp are not ported; moved to M17 by the user on 2026-10-09 (an agent's
+  partial port is kept on its branch for M17).
+- To analyse: the ESP/DMA handshake of QEMU's model against ncr53c9x.c's data-in phase.
+
+### EXT-194: ufs hangs the boot after the LU attaches (QEMU ufs or ufshci(4))
+
+- What: OpenBSD 8.0 amd64 on QEMU 11.1.2 with `-device ufs` and one `ufs-lu` (4096-byte
+  logical blocks; `diff-openbsd --arch amd64 --ufs FILE probe`, M16a):
+  `ufshci0 at pci0 dev 4 function 0 vendor "Red Hat", unknown product 0x0013 rev 0x00: apic 0
+  int 20, UFSHCI 4.10`, `scsibus2 at ufshci0: 2 targets, initiator 0`,
+  `sd1 at scsibus2 targ 1 lun 0: <QEMU, QEMU HARDDISK, 2.5+>`,
+  `sd1: 64MB, 4096 bytes/sector, 16384 sectors`; the rest of autoconf attaches (up to
+  `scsibus5 at softraid0: 256 targets`) and then nothing: no `root on sd0a`, no `login:` in
+  900 s, one vCPU at 100 %. arm64's GENERIC has ufshci only at acpi and fdt: the PCI function
+  is `not configured` there.
+- Port: ufshci is not ported; moved to M17 by the user on 2026-10-09 (an agent's partial port
+  is kept on its branch for M17).
+- To analyse: which I/O never completes (softraid's boot-time metadata read of the
+  4096-byte-sector disk is the first candidate).
+
+### EXT-195: pvscsi has no configuration command (QEMU pvscsi or vmwpvs(4))
+
+- What: OpenBSD 8.0 amd64 on QEMU 11.1.2 with `-device pvscsi` and a `scsi-hd`
+  (`diff-openbsd --arch amd64 --pvscsi FILE probe`, M16a):
+  `vmwpvs0 at pci0 dev 4 function 0 "VMware PVSCSI" rev 0x02: msi`,
+  `vmwpvs0: get configuration failed`, and no scsibus. `vmwpvs_get_config`
+  (`sys/dev/pci/vmwpvs.c`, VMWPVS_CMD_CONFIG) preloads the page header with INVPARAM/CHECK and
+  reads it back unchanged: QEMU's pvscsi does not seem to implement that command.
+- Port: vmwpvs(4) is ported whole and behaves the same (`smoke-vmwpvs` expects
+  `vmwpvs0: get configuration failed`); M16a's criterion restated by the user.
+- To analyse: QEMU's pvscsi command set against VMware's; whether vmwpvs could live without
+  the configuration page (OpenBSD's decision, not the port's).
 
 ## OpenBSD C slips
 

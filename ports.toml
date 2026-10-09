@@ -11243,34 +11243,34 @@ notes = "license: BSD-4 (Bill Paul) notice, kept whole. M16b: the whole file: cd
 c = "sys/dev/ic/mfireg.h"
 rust = "sys/dev/ic/mfireg.rs"
 status = "todo"
-notes = "M16: MegaRAID SAS firmware interface"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's megasas and megasas-gen2 (docs/EXTERNAL_BUGS.md EXT-192); port with real hardware"
 
 [[file]]
 c = "sys/dev/ic/mfivar.h"
 rust = "sys/dev/ic/mfivar.rs"
 status = "todo"
-notes = "M16: mfi_softc"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's megasas and megasas-gen2 (docs/EXTERNAL_BUGS.md EXT-192); port with real hardware"
 
 [[file]]
 c = "sys/dev/ic/mfi.c"
 rust = "sys/dev/ic/mfi.rs"
 status = "todo"
 deps = ["sys/dev/ic/mfireg.h", "sys/dev/ic/mfivar.h", "sys/scsi/scsiconf.c"]
-notes = "M16: mfi(4) with its bio(4) and sensor paths; criterion: QEMU's megasas disk mounted, both archs"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's megasas and megasas-gen2 (docs/EXTERNAL_BUGS.md EXT-192); port with real hardware"
 
 [[file]]
 c = "sys/dev/pci/mfi_pci.c"
 rust = "sys/dev/pci/mfi_pci.rs"
 status = "todo"
 deps = ["sys/dev/ic/mfi.c"]
-notes = "M16: mfi at pci"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's megasas and megasas-gen2 (docs/EXTERNAL_BUGS.md EXT-192); port with real hardware"
 
 [[file]]
 c = "sys/dev/pci/mfii.c"
 rust = "sys/dev/pci/mfii.rs"
 status = "todo"
 deps = ["sys/dev/ic/mfireg.h", "sys/scsi/scsiconf.c"]
-notes = "M16: mfii(4); criterion: QEMU's megasas-gen2 disk mounted, both archs"
+notes = "M17: deferred by the user on 2026-10-09: QEMU has no MegaRAID Fusion device (its megasas-gen2 is the SAS2108, mfi(4)'s; docs/EXTERNAL_BUGS.md EXT-192); port with real hardware"
 
 [[file]]
 c = "sys/dev/ic/mpireg.h"
@@ -11311,7 +11311,7 @@ notes = "M16a: the whole file: struct mpi_pci_softc (repr(C), the mpi softc firs
 c = "sys/dev/pci/mpiireg.h"
 rust = "sys/dev/pci/mpiireg.rs"
 status = "todo"
-notes = "M16: MPI-2 registers mfii.c reads"
+notes = "M17: deferred by the user on 2026-10-09: only mfii.c needs it here (QEMU has no MegaRAID Fusion device, docs/EXTERNAL_BUGS.md EXT-192); port with mfii on real hardware"
 
 [[file]]
 c = "sys/dev/pci/vmwpvs.c"
@@ -11754,59 +11754,59 @@ notes = "M16e: the whole file (ppbmatch, ppbattach with PCIe hot plug, ppbdetach
 c = "sys/dev/ic/ufshcireg.h"
 rust = "sys/dev/ic/ufshcireg.rs"
 status = "todo"
-notes = "M16: UFS host controller registers"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's ufs (docs/EXTERNAL_BUGS.md EXT-194); port with real hardware"
 
 [[file]]
 c = "sys/dev/ic/ufshcivar.h"
 rust = "sys/dev/ic/ufshcivar.rs"
 status = "todo"
-notes = "M16: ufshci_softc"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's ufs (docs/EXTERNAL_BUGS.md EXT-194); port with real hardware"
 
 [[file]]
 c = "sys/dev/ic/ufshci.c"
 rust = "sys/dev/ic/ufshci.rs"
 status = "todo"
 deps = ["sys/dev/ic/ufshcireg.h", "sys/dev/ic/ufshcivar.h", "sys/scsi/scsiconf.c"]
-notes = "M16: ufshci(4); criterion: QEMU's ufs with a ufs-lu disk mounted, both archs"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's ufs (docs/EXTERNAL_BUGS.md EXT-194); port with real hardware"
 
 [[file]]
 c = "sys/dev/pci/ufshci_pci.c"
 rust = "sys/dev/pci/ufshci_pci.rs"
 status = "todo"
 deps = ["sys/dev/ic/ufshci.c"]
-notes = "M16: ufshci at pci"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's ufs (docs/EXTERNAL_BUGS.md EXT-194); port with real hardware"
 
 [[file]]
 c = "sys/dev/ic/ncr53c9xreg.h"
 rust = "sys/dev/ic/ncr53c9xreg.rs"
 status = "todo"
-notes = "M16: NCR 53C9x registers"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's am53c974 and dc390 (docs/EXTERNAL_BUGS.md EXT-193); port with real hardware"
 
 [[file]]
 c = "sys/dev/ic/ncr53c9xvar.h"
 rust = "sys/dev/ic/ncr53c9xvar.rs"
 status = "todo"
-notes = "M16: ncr53c9x_softc"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's am53c974 and dc390 (docs/EXTERNAL_BUGS.md EXT-193); port with real hardware"
 
 [[file]]
 c = "sys/dev/ic/ncr53c9x.c"
 rust = "sys/dev/ic/ncr53c9x.rs"
 status = "todo"
 deps = ["sys/dev/ic/ncr53c9xreg.h", "sys/dev/ic/ncr53c9xvar.h", "sys/scsi/scsiconf.c"]
-notes = "M16: the NCR 53C9x SCSI core under pcscp(4)"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's am53c974 and dc390 (docs/EXTERNAL_BUGS.md EXT-193); port with real hardware"
 
 [[file]]
 c = "sys/dev/pci/pcscpreg.h"
 rust = "sys/dev/pci/pcscpreg.rs"
 status = "todo"
-notes = "M16: Am53c974 DMA registers"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's am53c974 and dc390 (docs/EXTERNAL_BUGS.md EXT-193); port with real hardware"
 
 [[file]]
 c = "sys/dev/pci/pcscp.c"
 rust = "sys/dev/pci/pcscp.rs"
 status = "todo"
 deps = ["sys/dev/ic/ncr53c9x.c", "sys/dev/pci/pcscpreg.h"]
-notes = "M16: pcscp(4); criterion: a disk on QEMU's am53c974 (and dc390) mounted; amd64 GENERIC only"
+notes = "M17: deferred by the user on 2026-10-09: OpenBSD 8.0 fails on QEMU's am53c974 and dc390 (docs/EXTERNAL_BUGS.md EXT-193); port with real hardware"
 
 [[file]]
 c = "sys/dev/ic/dcreg.h"
