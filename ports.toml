@@ -10940,66 +10940,85 @@ notes = "M16: fxp at pci"
 [[file]]
 c = "sys/dev/ic/dp8390reg.h"
 rust = "sys/dev/ic/dp8390reg.rs"
-status = "todo"
-notes = "M16: NS DP8390 registers"
-
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "b3e84c5092744ec88d6de9ea34ed3e4247d0565b"
+notes = "license: Greenman notice, kept whole; M16c: the DP8390 registers as usize offsets and u8 bits; struct dp8390_ring is Dp8390Ring"
 [[file]]
 c = "sys/dev/ic/dp8390var.h"
 rust = "sys/dev/ic/dp8390var.rs"
-status = "todo"
-notes = "M16: dp8390_softc"
-
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "fa3b8f1f710239540b40245d07cc5dad9b4273eb"
+notes = "license: Hannum/Greenman notice, kept whole; M16c: dp8390_softc, a Cell softc (repr(C), device first); NIC_GET/PUT/BARRIER are methods; callbacks are Option<fn>, ring_copy takes a slice"
 [[file]]
 c = "sys/dev/ic/dp8390.c"
 rust = "sys/dev/ic/dp8390.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "0a640c4860a0f5df17e97179856ccc1b16abead6"
 deps = ["sys/dev/ic/dp8390reg.h", "sys/dev/ic/dp8390var.h"]
-notes = "M16: the DP8390 core under ne(4)"
-
+notes = "license: Hannum/Greenman notice, kept whole; M16c: the DP8390 core under ne(4). Default memory accessors (region_1) are loops over bus_space_{read,write}_1; NBPFILTER on; DIAGNOSTIC is the diagnostic feature; DEBUG unset; host tests for the multicast filter bit"
 [[file]]
 c = "sys/dev/ic/ne2000reg.h"
 rust = "sys/dev/ic/ne2000reg.rs"
-status = "todo"
-notes = "M16: NE2000 registers"
-
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "4fc2d982559e7b7f4150370719e42ccb6e7b8e16"
+notes = "license: Greenman notice, kept whole; M16c: NE2000 register group offsets (usize)"
 [[file]]
 c = "sys/dev/ic/ne2000var.h"
 rust = "sys/dev/ic/ne2000var.rs"
-status = "todo"
-notes = "M16: ne2000_softc"
-
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "d578324865b38686377b232c7c72caf297ab00bd"
+notes = "M16c: ne2000_softc (repr(C), dp8390 softc first); the sc_type enum is Ne2000Type"
 [[file]]
 c = "sys/dev/ic/ax88190reg.h"
 rust = "sys/dev/ic/ax88190reg.rs"
-status = "todo"
-notes = "M16: AX88190 registers ne2000.c's ASIX path names"
-
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "14f4624f0051a6280b17294204a130007654e127"
+notes = "M16c: AX88190 registers"
 [[file]]
 c = "sys/dev/ic/rtl80x9reg.h"
 rust = "sys/dev/ic/rtl80x9reg.rs"
-status = "todo"
-notes = "M16: RTL8019/8029 registers for ne2000's Realtek path"
-
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "b5f45afc85b52c6ee6336418be83e80db7a1b261"
+notes = "M16c: RTL8019/8029 registers (NERTL_* usize, bits u8)"
 [[file]]
 c = "sys/dev/ic/rtl80x9var.h"
-rust = "sys/dev/ic/rtl80x9var.rs"
-status = "todo"
-notes = "M16: RTL80x9 media helpers"
+rust = "sys/dev/ic/rtl80x9.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "9622865c741f88f58af780cf0613991bf59b36bf"
+notes = "M16c: only prototypes; they are rtl80x9.rs's functions (shares its file)"
+[[file]]
+c = "sys/dev/ic/rtl80x9.c"
+rust = "sys/dev/ic/rtl80x9.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "96d920e693251ef8f7a2e07fd619fe45f98c6296"
+deps = ["sys/dev/ic/dp8390.c", "sys/dev/ic/rtl80x9reg.h", "sys/dev/ic/rtl80x9var.h"]
+notes = "M16c: RTL8029 media (page 3 CONFIG registers); host test for the default media"
 
 [[file]]
 c = "sys/dev/ic/ne2000.c"
 rust = "sys/dev/ic/ne2000.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "500f236c96ebe19381082686a419329756829619"
 deps = ["sys/dev/ic/dp8390.c", "sys/dev/ic/ne2000reg.h", "sys/dev/ic/ne2000var.h"]
-notes = "M16: the NE2000 core"
-
+notes = "license: BSD plus the Hannum/Greenman notice, kept whole; M16c: the NE2000 core (PIO through the ASIC data port). GWETHER (never defined) is not ported; readmem drops the byte the C reads past an odd destination; bus_space_{read,write}_multi_1 and _raw_multi_2 added to machine/bus.rs"
 [[file]]
 c = "sys/dev/pci/if_ne_pci.c"
 rust = "sys/dev/pci/if_ne_pci.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "8f8f801fa30026704dfe30158b6b85d4cf25b331"
 deps = ["sys/dev/ic/ne2000.c"]
-notes = "M16: ne at pci; criterion: QEMU's ne2k_pci pings 10.0.2.2; amd64 GENERIC only"
-
+notes = "M16c: ne* at pci?, amd64 GENERIC only; QEMU ne2k_pci (Realtek 8029) pings 10.0.2.2 in smoke-ne"
 [[file]]
 c = "sys/dev/usb/usbcdc.h"
 rust = "sys/dev/usb/usbcdc.rs"

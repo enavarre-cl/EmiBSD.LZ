@@ -39,7 +39,7 @@
 //! acpi?` (M13), `puc* at pci?` and `com* at puc?` (M13; `com*` takes the units from 4),
 //! `em* at pci?` (M13), `efifb0 at mainbus?` and `wsdisplay0 at efifb?` (M13),
 //! `re* at pci?`, `rlphy* at mii?`, `rgephy* at mii?` and `ukphy* at mii?` (M13),
-//! `vmx* at pci?` (M13), `pcn* at pci?` (M16c), `vga0 at isa?`, `vga* at pci?` and `wsdisplay0 at vga? console 1` (M13),
+//! `vmx* at pci?` (M13), `pcn* at pci?` (M16c), `ne* at pci?` (M16c), `vga0 at isa?`, `vga* at pci?` and `wsdisplay0 at vga? console 1` (M13),
 //! `wskbd* at ukbd? mux 1` and `pseudo-device wsmux 2` (M13), `acpimcfg* at acpi?` (M14),
 //! `ppb* at pci?` and `pci* at ppb?` (M16e),
 //! `acpidmar0 at acpi? disable` (M16e),
@@ -62,7 +62,7 @@
 //! `iic*` parents (`viapm?`, `amdiic?`, ...); `isa0` at `pcib?`,
 //! `amdpcib?` and `tcpcib?`, and every other device at `isa?` (`isadma0`, `pckbc0`,
 //! `pcppi0`, `lpt0`, `fdc0`, `wdc*`, the sensors, ...); every other device at `pci?`
-//! (`pchb*`, `pcib*`, the network drivers but em, re, vmx and pcn (`rl* at pci?` among them: QEMU's rtl8139 is
+//! (`pchb*`, `pcib*`, the network drivers but em, re, vmx, pcn and ne (`rl* at pci?` among them: QEMU's rtl8139 is
 //! an 8139C+, which re(4) takes) and the storage drivers but nvme, ahci and siop, ...), every other
 //! device at `mii?` (the other PHY drivers), every
 //! other
@@ -98,6 +98,7 @@ use crate::dev::bio::bioattach;
 use crate::dev::i2c::i2c::{IIC_CA, IIC_CD};
 use crate::dev::ic::ahci::AHCI_CD;
 use crate::dev::ic::com::COM_CD;
+use crate::dev::ic::ne2000::NE_CD;
 use crate::dev::ic::nvme::NVME_CD;
 use crate::dev::ic::re::RE_CD;
 use crate::dev::ic::siop::SIOP_CD;
@@ -115,6 +116,7 @@ use crate::dev::pci::azalia::{AZALIA_CA, AZALIA_CD};
 use crate::dev::pci::ehci_pci::EHCI_PCI_CA;
 use crate::dev::pci::ichiic::{ICHIIC_CA, ICHIIC_CD};
 use crate::dev::pci::if_em::{EM_CA, EM_CD};
+use crate::dev::pci::if_ne_pci::NE_PCI_CA;
 use crate::dev::pci::if_pcn::{PCN_CA, PCN_CD};
 use crate::dev::pci::if_re_pci::RE_PCI_CA;
 use crate::dev::pci::if_vmx::{VMX_CA, VMX_CD};
@@ -352,11 +354,11 @@ const LOC_UCOMBUS_UNK: &[i64] = &[-1];
 /// `{0}`: the free slots `config(8)` leaves at the end of `cfdata[]` for UKC's `add`.
 const NFREE: usize = 8;
 
-/// `cfdata[]`: 78 entries, 79 with `MULTIPROCESSOR` (GENERIC.MP's `cpu* at mainbus?`).
+/// `cfdata[]`: 79 entries, 80 with `MULTIPROCESSOR` (GENERIC.MP's `cpu* at mainbus?`).
 const NCFDATA: usize = if cfg!(feature = "multiprocessor") {
-    79
+    80
 } else {
-    78
+    79
 };
 
 /// `cfdata[]`, edited by UKC (`boot -c`) before autoconfiguration reads it
@@ -1230,7 +1232,19 @@ pub static CFDATA: StaticCell<[Cfdata; NCFDATA + NFREE]> = StaticCell::new([
         LN_PCI,
         0,
     ),
-    // 78: cpu* at mainbus? (GENERIC.MP, MULTIPROCESSOR): the application processors, unit 1
+    // 78: ne* at pci? (M16c)
+    Cfdata::new(
+        &NE_PCI_CA,
+        &NE_CD,
+        0,
+        FSTATE_STAR,
+        LOC_PCI_UNK,
+        0,
+        PV_PCI,
+        LN_PCI,
+        0,
+    ),
+    // 79: cpu* at mainbus? (GENERIC.MP, MULTIPROCESSOR): the application processors, unit 1
     // on (cpu0 takes unit 0).
     #[cfg(feature = "multiprocessor")]
     Cfdata::new(&CPU_CA, &CPU_CD, 1, FSTATE_STAR, &[], 0, PV_MAINBUS, 0, 1),
