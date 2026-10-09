@@ -1147,3 +1147,68 @@ pcppi(4) and spkr(4) itself while they ran.
 Effort: _(user)_
 
 Time: _(user)_
+
+## M16a Storage drivers
+
+Boundary: the commit that marks M16a met ("docs: M16a met"). The work started on 02f407d3
+(M16c's close) in a coordinator branch that merged main four times (the worktree seeding,
+EXTERNAL_BUGS, M16d's close and the deferral rule). Its own work is `main..` that commit:
+20 commits (with this one; `git rev-list --count --no-merges main..`) besides 12 merges,
+`git diff --shortstat main HEAD`: 104 files changed, 53639 insertions(+), 234 deletions(-)
+before the docs of this commit. Seven subagents in harness worktrees, two at a time while
+M16d ran beside, three after it closed: the wdc/ata/wd layer (Opus), mpi (Sonnet), pciide
+(Opus, 9k lines, alone), sdhc and the sdmmc stack (Opus), ISA DMA and the floppy (Opus),
+ufshci (Opus) and ncr53c9x/pcscp (Opus); the coordinator added xtask's storage options,
+probed OpenBSD 8.0 and ported vmwpvs itself.
+
+- Went well: probing first. Before any port, `storage.rs` gave every QEMU controller an
+  option (`--ide`, `--megasas`, `--megasas-gen2`, `--mptsas`, `--pvscsi`, `--am53c974`,
+  `--dc390`, `--ufs`, `--sdhci`, `--floppy`) and `diff-openbsd probe` booted the OpenBSD 8.0
+  snapshot with each, running the smokes' fdisk/newfs/mount/cmp/dd session. In half an hour
+  it showed which controllers OpenBSD 8.0 itself drives (IDE, mptsas, sdhci, the floppy)
+  and which it does not (megasas and megasas-gen2 fail firmware initialisation, am53c974 gets
+  an empty INQUIRY, ufs hangs the boot, pvscsi has no configuration command), and that QEMU's
+  megasas-gen2 is a SAS2108, mfi(4)'s, so mfii(4) has no QEMU device at all.
+- Went well: two QEMU setups found by the probe and kept as xtask options, not deviations:
+  OVMF enables a PIIX IDE channel only when a boot option is on it (`bootindex=1` on the IDE
+  disk), and OpenBSD's fdprobe finds no drive 0 on QEMU's controller (the image in drive B).
+- Went well: the user's decision mid-run (~18:05): a QEMU device on which OpenBSD 8.0 fails
+  is not ported in a QEMU milestone; it goes to EXTERNAL_BUGS and to M17. The ufshci and
+  pcscp agents stopped at a wip commit (their branches kept for M17); mfi and mfii were never
+  launched. vmwpvs, already done, stays ported and behaves as OpenBSD 8.0.
+- Went well: faithful attach lines. wd0, mpi0, sdhc0/sdmmc0, fdc0/fd0 and vmwpvs0 print
+  OpenBSD 8.0's lines in its order, and fd(4) reproduces OpenBSD's own hard error on a raw
+  read that ends at a cylinder's end (EXT-196).
+- Failed: the close CI's first run. M16a's wd and fd device nodes took the ramdisk's
+  ownership table past the makefs shim's 1024 entries, which it dropped silently, so
+  efiboot's `/bsd` (line 1044) lost its mode and `smoke-efiboot` timed out. The table holds
+  8192 entries now and a longer one is an error. The same run's `smoke-clock` timeout was
+  EXT-2 (xtask frozen before printing, no QEMU started).
+- Failed: `cfdata[]` once more, now with M16d beside: the merge put M16a's entries after
+  M16d's and before the feature-gated viocon entry, whose index moves with a cargo feature,
+  and joined the locator names (M16d's `slot`, pciide's `channel` and `drive`, fd's `drive`
+  run).
+- Failed: watchers that pgrep for a pattern their own command line contains never end;
+  the patterns now use a bracket (`check[s].sh`).
+- Idioms: a C enum whose members share values (`enum wdc_regs`) is a newtype with the C names
+  as constants (docs/C_TO_RUST.md); pciide reaches the machine's compatibility-interrupt glue
+  through a new `machine::pciide_machdep` contract (docs/ARCHITECTURE.md).
+- Rules: the deferral rule above (`scope-and-stubs.md`, main); `xtask.md` gains `storage.rs`;
+  the machine-load etiquette under a foreign `ci.lock` (AGENT-RULES).
+- External bugs: EXT-192 to EXT-222: the four QEMU controllers OpenBSD fails on, two QEMU
+  floppy behaviours, and 25 OpenBSD C slips the ports met (mpi's dangling poll pointer,
+  wdc's odd-length PIO, pciide's chip slips, sdmmc's double lock release, MAKEDEV's fd1
+  minors, ...).
+- Open: mfi, mfii, ncr53c9x/pcscp and ufshci in M17; `atapiscsi* at pciide?` and
+  `wdc* at isa? disable` are left out (atapiscsi is not ported); `dumpsys` is not ported, so
+  `wddump` is complete but uncalled.
+- Numbers: ported 1102 → 1169 (`cargo xtask ports status`, totals 36 todo, 139 wip, 1169
+  ported, 37 skipped, 1381 entries); tests bsd 2621 → 2731 (2446 passed, 285 ignored in
+  `just test`); smoke recipes 78 → 83 (smoke-vmwpvs, smoke-mpi, smoke-sdmmc, smoke-wd,
+  smoke-fd); unsafe-report kernel 8546 → 8992 blocks.
+  `just jobs=3 ci` rc=0 in 24m42s (83 of 83 smokes in 18m49s); `just diff-openbsd` rc=0, 102
+  steps, 99 equal, 3 expected, 0 unexpected, on both archs.
+
+Effort: _(user)_
+
+Time: _(user)_

@@ -56,6 +56,8 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-193 | QEMU `am53c974`/`dc390` or OpenBSD pcscp(4) | the disk's INQUIRY comes back empty after a Check Condition, sd1 unusable | firmware/hardware | wrong result | reproduced | ncr53c9x/pcscp not ported: moved to M17 by the user | open, to analyse |
 | EXT-194 | QEMU `ufs` or OpenBSD ufshci(4) | the LU attaches as sd1, then the boot hangs before `root on` (amd64) | firmware/hardware | wrong result (boot hangs) | reproduced | ufshci not ported: moved to M17 by the user | open, to analyse |
 | EXT-195 | QEMU `pvscsi` or OpenBSD vmwpvs(4) | `vmwpvs0: get configuration failed`: no scsibus | firmware/hardware | wrong result | reproduced | faithful; criterion restated (M16a) | open, to analyse |
+| EXT-196 | QEMU `isa-fdc` or OpenBSD fd(4) (`sys/dev/isa/fd.c:843`) | a read that ends at a cylinder's end reports st0 SEEK END; fd(4) calls it a hard error | firmware/hardware | wrong result | reproduced | faithful (`smoke-fd` expects the error) | open, to analyse |
+| EXT-197 | QEMU `isa-fdc` and OpenBSD fd(4) (`sys/dev/isa/fd.c:233`) | drive 0 is never found: the reset's "ready changed" status lands in the recalibrate's | firmware/hardware | wrong result | reproduced | faithful; the image sits in drive B (`storage.rs`) | open, to analyse |
 | EXT-23 | `sys/netinet/tcp_output.c:1195` | `tcp_softtso_chop` uses the IP header pointer after `m_pullup` | remote | memory corruption | claimed | fixed | open |
 | EXT-27 | `sys/nfs/nfs_serv.c:1151` | `nfsrv_create` frees the name buffer twice | remote | memory corruption | read | fixed | open |
 | EXT-137 | `sys/dev/ic/dc.c:2153` | receive trusts the descriptor's frame length | remote | memory corruption | read | fixed | open |
@@ -94,6 +96,7 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-100 | `sys/dev/usb/uhidev.c:530` | zero-length report wraps the length | device | memory corruption | read | fixed | open |
 | EXT-177 | `sys/lib/libsa/alloc.c:185` | arm64 efiboot heap has no limit | device | memory corruption | read | fixed | open |
 | EXT-178 | `sys/arch/arm64/stand/efiboot/efidev.c:106` | whole sectors copied past the caller's size (also amd64) | device | memory corruption | read | fixed | open |
+| EXT-200 | `sys/dev/ic/ncr53c9x.c:1341` | a reselection with no target bit indexes `sc_tinfo[255]` | device | memory corruption | read | not ported (M17) | open |
 | EXT-32 | `sys/ufs/ext2fs/ext2fs_bmap.c:110` | `ext4_bmapext` uses an uninitialised extent path | device | crash | read | fixed | open |
 | EXT-34 | `sys/ufs/ext2fs/ext2fs_extents.c:73` | extent binary search trusts `eh_ecount` | device | crash | read | fixed | open |
 | EXT-35 | `sys/ufs/ext2fs/ext2fs_lookup.c:175` | `ext2fs_readdir` reads past its buffer | device | crash | read | fixed | open |
@@ -136,6 +139,7 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-102 | `sys/dev/usb/uhub.c:324` | port bits above 31 shifted out of an int | device | wrong result | read | fixed | open |
 | EXT-107 | `sys/dev/hid/hidms.c:233` | Wacom pad buttons copied from the wrong index | device | wrong result | read | same fault (see below) | open |
 | EXT-176 | `sys/lib/libsa/cd9660.c:240` | directory records walked past the block | device | wrong result | read | fixed | open |
+| EXT-216 | `sys/dev/ic/ncr53c9x.c:1454` | message-in reads `sc_imess` past its 9 bytes | device | wrong result | read | not ported (M17) | open |
 | EXT-76 | `sys/scsi/sd.c:1374` | `viscpy` reads past the INQUIRY field | device | cosmetic | read | fixed | open |
 | EXT-98 | `sys/dev/usb/uaudio.c:726` | name list keeps a dead stack buffer | device | cosmetic | read | fixed | open |
 | EXT-41 | `sys/miscfs/fuse/fuse_device.c:136` | `fuse_device_cleanup` corrupts the queues | root | memory corruption | read | fixed | open |
@@ -143,6 +147,7 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-117 | `sys/dev/ata/atascsi.c:1135` | unmap failure frees `xa->data`, not its buffer | root | memory corruption | read | fixed | open |
 | EXT-130 | `sys/dev/ic/fxp.c:1847` | oversized microcode file copied past the block | root | memory corruption | read | fixed | open |
 | EXT-175 | `sys/lib/libsa/tftp.c:169` | long path overflows the TFTP request buffer | root | memory corruption | read | fixed | open |
+| EXT-201 | `sys/dev/ic/wdc.c:1490` | an odd-length PIO input writes one byte past the buffer | root | memory corruption | read | fixed | open |
 | EXT-13 | `sys/kern/kern_unveil.c:266` | cover walk from a slot an unmount zapped (NULL vnode) | root | crash | read | fixed | open |
 | EXT-14 | `sys/kern/kern_unveil.c:266` | cover walk spins outside a chroot | root | crash | read | fixed | open |
 | EXT-84 | `sys/dev/softraid_concat.c:140` | block after the end reaches `sv_chunks[no_chunk]` | root | crash | read | fixed | open |
@@ -162,11 +167,16 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-155 | `sys/dev/wscons/wsemul_dumb.c:102` | `crippled` uninitialised for non-console screens | root | wrong result | read | fixed | open |
 | EXT-157 | `sys/dev/wscons/wsdisplay.c:3441` | paste after reallocation reads stale memory | root | wrong result | read | fixed | open |
 | EXT-173 | `sys/arch/arm64/arm64/db_interface.c:90` | ddb's `$x30` is past the trapframe | root | wrong result | read | fixed | open |
+| EXT-217 | `sys/dev/ic/mpi.c:3060` | the cache ioctl reads its reply from the rcb, not the reply frame | root | wrong result | read | faithful | open |
+| EXT-218 | `sys/dev/ata/wd.c:905` | a failed dump leaves `wddoingadump` set; later dumps get EFAULT | root | wrong result | read | faithful | open |
+| EXT-219 | `etc/etc.amd64/MAKEDEV:606` | fd1's nodes get unit 0's minors (U*128, FDUNIT divides by 512) | root | wrong result | read | not used (only fd0 in the ramdisk) | open |
 | EXT-18 | `sys/kern/kern_descrip.c:116` | `find_next_zero` scans past the fd bitmaps | root | cosmetic | read | fixed | open |
 | EXT-19 | `sys/net/pfkeyv2.c:1939` | ADDFLOW copies a whole sockaddr_union from a sockaddr_in | root | cosmetic | read | fixed | open |
 | EXT-69 | `sys/kern/vfs_init.c:91` | UDF's `vfc_datasize` is `struct iso_args`'s | root | cosmetic | read | fixed | open |
 | EXT-161 | `sys/dev/audio.c:1282` | uninitialised mixer entries saved and restored | root | cosmetic | read | fixed | open |
 | EXT-167 | `sys/dev/gpio/gpio.c:419` | GPIOATTACH prints through the wrong print function | root | cosmetic | read | fixed | open |
+| EXT-220 | `sys/dev/ic/mpi.c:3297` | the volume ioctl copies 32 bytes from an 8-byte vendor field | root | cosmetic | read | faithful | open |
+| EXT-221 | `sys/dev/ic/mpi.c:3348` | the disk ioctl `strlcpy`s an unterminated 8-byte vendor id | root | cosmetic | read | faithful | open |
 | EXT-77 | `sys/dev/softraid_raid5.c:486` | deferred RAID 5/6 write queued twice after a read error | firmware/hardware | memory corruption | read | fixed | open |
 | EXT-94 | `sys/dev/usb/xhci.c:839` | slot, endpoint and port ids from TRBs index arrays | firmware/hardware | memory corruption | read | fixed | open |
 | EXT-109 | `sys/dev/ic/nvme.c:1218` | completion's command id indexes `sc_ccbs` unchecked | firmware/hardware | memory corruption | read | panics instead | open |
@@ -184,6 +194,8 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-153 | `sys/dev/acpi/acpiprt.c:380` | bus number over 255 writes past `mp_busses` | firmware/hardware | memory corruption | read | fixed | open |
 | EXT-168 | `sys/dev/ofw/ofw_misc.c:1103` | more than 2 IOMMU cells overrun `cells[2]` | firmware/hardware | memory corruption | read | fixed | open |
 | EXT-170 | `sys/dev/ipmi.c:557` | BT/SMIC receive trusts the BMC's length | firmware/hardware | memory corruption | read | fixed | open |
+| EXT-198 | `sys/dev/ic/mpi.c:1230` | a timed-out `mpi_poll` leaves the reply pointing at its dead stack frame | firmware/hardware | memory corruption | read | fixed | open |
+| EXT-199 | `sys/dev/pci/pcscp.c:466` | the leftover FIFO byte is stored before the negative-count check | firmware/hardware | memory corruption | read | not ported (M17) | open |
 | EXT-114 | `sys/dev/ic/nvme.c:2131` | `rp` indexes a 4-entry array | firmware/hardware | crash | read | fixed | open |
 | EXT-122 | `sys/dev/pv/vioblk.c:344` | completion for an empty slot dereferences NULL | firmware/hardware | crash | read | panics instead | open |
 | EXT-128 | `sys/dev/pci/ahci_pci.c:439` | NULL interrupt handle disestablished | firmware/hardware | crash | read | fixed | open |
@@ -196,12 +208,14 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-162 | `sys/dev/pci/auich.c:1469` | calibration divides by a zero interval | firmware/hardware | crash | read | fixed | open |
 | EXT-171 | `sys/dev/ipmi.c:1576` | unknown interface type dereferences NULL | firmware/hardware | crash | read | fixed | open |
 | EXT-172 | `sys/arch/arm64/dev/acpiiort.c:82` | IORT walks not bounded by the table | firmware/hardware | crash | read | fixed | open |
+| EXT-202 | `sys/dev/sdmmc/sdmmc_io.c:373` | a card that cannot be selected releases the bus lock twice | firmware/hardware | crash | read | faithful | open |
 | EXT-80 | `sys/dev/softraid_raid6.c:655` | `sr_raid6_intr` leaks a failed read's opaque | firmware/hardware | leak | read | fixed | open |
 | EXT-134 | `sys/dev/ic/dc.c:3103` | detach unmaps one page of three | firmware/hardware | leak | read | fixed | open |
 | EXT-138 | `sys/dev/acpi/dsdt.c:2164` | `aml_compare` leaks the converted operand | firmware/hardware | leak | read | fixed | open |
 | EXT-139 | `sys/dev/acpi/dsdt.c:2982` | Create*Field leaks the converted buffer | firmware/hardware | leak | read | fixed | open |
 | EXT-140 | `sys/dev/acpi/dsdt.c:1845` | Return inside While leaks scopes | firmware/hardware | leak | read | fixed | open |
 | EXT-163 | `sys/dev/pci/azalia.c:2647` | deleting a codec leaks its connection lists | firmware/hardware | leak | read | fixed | open |
+| EXT-205 | `sys/dev/ic/mpi.c:816` | a failed `mpi_poll` leaks its ccb (port enable, config pages, cache ioctl) | firmware/hardware | leak | read | faithful | open |
 | EXT-20 | `sys/kern/clock_subr.c:104` | RTC month past 12 indexes past `month_days`; int overflow | firmware/hardware | wrong result | read | fixed | open |
 | EXT-112 | `sys/dev/ic/nvme.c:1281` | `(1 << mdts) * (1 << mpsmin)` overflows | firmware/hardware | wrong result | read | fixed | open |
 | EXT-123 | `sys/dev/pci/if_vmx.c:313` | uninitialised interrupt handle after a failed MSI-X map | firmware/hardware | wrong result | read | fixed | open |
@@ -220,11 +234,22 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-183 | `sys/dev/pckbc/pckbd.c:685` | `pckbd_xtbl2_ext`'s first row has 15 entries, every later code one off | firmware/hardware | wrong result | read | faithful | open |
 | EXT-187 | `sys/dev/pv/viomb.c:348` | a short deflate records one page fewer than it moved | firmware/hardware | wrong result | read | faithful | open |
 | EXT-188 | `sys/dev/pv/viomb.c:320` | the page-number arrays the host reads are queued device-writable | firmware/hardware | wrong result | read | faithful | open |
+| EXT-206 | `sys/dev/pci/pciide.c:4217` | CMD680 timings write both bytes to the same register | firmware/hardware | wrong result | read | faithful | open |
+| EXT-207 | `sys/dev/pci/pciide.c:6088` | HPT's channel loop overwrites the compat channel taken from the function | firmware/hardware | wrong result | read | faithful | open |
+| EXT-208 | `sys/dev/pci/pciide.c:5018` | CY82C693 stores DMA mode -1 as 255 in both drives | firmware/hardware | wrong result | read | faithful | open |
+| EXT-209 | `sys/dev/pci/pciide.c:9023` | RDC setup clears the other channel's timings | firmware/hardware | wrong result | read | faithful | open |
+| EXT-210 | `sys/dev/pci/pciide.c:1703` | compat unmap releases the control registers through the command handle | firmware/hardware | wrong result | read | faithful | open |
+| EXT-211 | `sys/dev/pci/pciide.c:1787` | native-map error path unmaps the control base with the command tag | firmware/hardware | wrong result | read | faithful | open |
+| EXT-212 | `sys/dev/sdmmc/sdmmc_mem.c:655` | a select or block-length failure is overwritten and lost | firmware/hardware | wrong result | read | faithful | open |
+| EXT-213 | `sys/dev/sdmmc/sdmmc_mem.c:917` | an MMC bus-width failure is overwritten by the clock change | firmware/hardware | wrong result | read | faithful | open |
+| EXT-214 | `sys/dev/ata/wd.c:1065` | `wd_flushcache` tests an error code as a command flag; its ENODEV never happens | firmware/hardware | wrong result | read | faithful | open |
 | EXT-190 | `sys/dev/pv/viogpu.c:173` | the `softintr_establish` cookie is dropped and `viogpu_rx_soft` never scheduled | firmware/hardware | cosmetic | read | faithful | open |
 | EXT-191 | `sys/dev/pv/viogpu.c:214` | the attach line lacks its newline before `virtio_attach_finish` prints | firmware/hardware | cosmetic | reproduced | faithful | open |
+| EXT-222 | `sys/dev/ic/mpireg.h:754` | `mpi_msg_eventack_reply`'s `ioc_status` is 32 bits where every other reply has 16 | firmware/hardware | cosmetic | read | faithful | open |
 | EXT-86 | `sys/dev/usb/ugen.c:393` | failed isochronous open frees started transfers | alloc-failure | memory corruption | read | same fault (see below) | open |
 | EXT-105 | `sys/dev/usb/ucom.c:551` | open failure frees the HID device's transfer | alloc-failure | memory corruption | read | fixed | open |
 | EXT-165 | `sys/dev/pci/azalia_codec.c:1276` | failed mixer growth ignored, array overrun | alloc-failure | memory corruption | read | fixed | open |
+| EXT-204 | `sys/dev/ic/ufshci.c:1429` | a failed ccb allocation frees the request list the running controller uses | alloc-failure | memory corruption | read | not ported (M17) | open |
 | EXT-12 | `sys/net/if_wg.c:640` | `art_insert` failure dereferenced as a node | alloc-failure | crash | read | fixed | open |
 | EXT-55 | `sys/ntfs/ntfs_vfsops.c:759` | `ntfs_vgetex` releases the ntnode twice | alloc-failure | crash | read | same fault (see below) | open |
 | EXT-93 | `sys/dev/usb/ohci.c:2761` | bulk start uses the tail before the error check | alloc-failure | crash | read | fixed | open |
@@ -232,10 +257,12 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-124 | `sys/dev/pci/if_vmx.c:569` | RSS DMA allocation used unchecked | alloc-failure | crash | read | fixed | open |
 | EXT-174 | `sys/dev/fdt/pciecam.c:223` | NULL extent passed to `extent_free` | alloc-failure | crash | read | fixed | open |
 | EXT-189 | `sys/dev/pv/viogpu.c:296` | attach's error paths unmap the address of the pointer, not the mapping | alloc-failure | crash | read | fixed | open |
+| EXT-203 | `sys/dev/pci/pciide.c:4286` | six chip maps use their `M_NOWAIT` cookie unchecked | alloc-failure | crash | read | panics | open |
 | EXT-78 | `sys/dev/softraid_raid5.c:608` | RAID 5 leaks a strip block on error | alloc-failure | leak | read | fixed | open |
 | EXT-79 | `sys/dev/softraid_raid6.c:632` | RAID 6 leaks blocks and ccbs on error | alloc-failure | leak | read | fixed | open |
+| EXT-215 | `sys/dev/pci/pcscp.c:304` | attach's error path unmaps the DMA map pointer, not the MDL mapping | alloc-failure | wrong result | read | not ported (M17) | open |
 
-## Entries (EXT-1 to EXT-8, EXT-192 to EXT-195)
+## Entries (EXT-1 to EXT-8, EXT-192 to EXT-197)
 
 ### EXT-1: EDK2 UhciDxe ASSERT on arm64 (QEMU firmware)
 
@@ -355,7 +382,12 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
   configured`.
 - Port: ncr53c9x and pcscp are not ported; moved to M17 by the user on 2026-10-09 (an agent's
   partial port is kept on its branch for M17).
-- To analyse: the ESP/DMA handshake of QEMU's model against ncr53c9x.c's data-in phase.
+- To analyse: the ESP/DMA handshake of QEMU's model against ncr53c9x.c's data-in phase. The
+  porting agent's reading (claimed, not checked against QEMU's source, which is not on the
+  machine): pcscp(4) runs every data-in phase in the DMA engine's MDL mode, writing only the
+  page offset to `DMA_SPA` and the pages to the MDL; if QEMU's `esp-pci` does not implement
+  MDL mode, the data goes to guest physical page 0, which matches the zero sense data and the
+  empty INQUIRY.
 
 ### EXT-194: ufs hangs the boot after the LU attaches (QEMU ufs or ufshci(4))
 
@@ -370,8 +402,10 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
   is `not configured` there.
 - Port: ufshci is not ported; moved to M17 by the user on 2026-10-09 (an agent's partial port
   is kept on its branch for M17).
-- To analyse: which I/O never completes (softraid's boot-time metadata read of the
-  4096-byte-sector disk is the first candidate).
+- To analyse: which I/O never completes. An agent's partial port (M17 branch) hangs EmiBSD at
+  the same place with the same attach lines; instrumented, no READ reached
+  `ufshci_scsi_io` and no interrupt came before the hang, so the stall is earlier (an
+  INQUIRY or capacity command, or `sdopen`) than softraid's metadata read.
 
 ### EXT-195: pvscsi has no configuration command (QEMU pvscsi or vmwpvs(4))
 
@@ -385,6 +419,35 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
   `vmwpvs0: get configuration failed`); M16a's criterion restated by the user.
 - To analyse: QEMU's pvscsi command set against VMware's; whether vmwpvs could live without
   the configuration page (OpenBSD's decision, not the port's).
+
+### EXT-196: a floppy read that ends at a cylinder's end fails (QEMU isa-fdc or fd(4))
+
+- What: on QEMU 11.1.2 (q35 with `-device isa-fdc`, a 1.44 MB image in drive B, M16a's
+  `--floppy`), `dd if=/dev/rfd0c of=/dev/null bs=18k count=10` prints `fd0c: hard error
+  reading fsbn 32 of 0-35 (st0 21<seek_cmplt> st1 0 st2 0 cyl 1 head 0 sec 1)` and `dd:
+  /dev/rfd0c: Input/output error` on OpenBSD 8.0 (`diff-openbsd probe --floppy`) as on EmiBSD
+  (`smoke-fd`). The read of head 1, sectors 15 to 18 of cylinder 0 (multi-track) ends at the
+  cylinder's end; QEMU reports st0 0x21 (SEEK END and drive 1) with C/H/R 1/0/1 where a 765
+  reports normal termination, and fd(4)'s completion check (`(st0 & 0xf8) != 0`,
+  `sys/dev/isa/fd.c:843` at 3ce1f3f79392) rejects it, retries and gives up. mount_msdos(8)
+  reads the image.
+- Port: faithful; `smoke-fd` expects OpenBSD's lines, the hard error included.
+- To analyse: QEMU's `fdctrl` result phase after a multi-track transfer against the 82077AA
+  datasheet.
+
+### EXT-197: drive 0 is never found on QEMU's floppy controller (QEMU isa-fdc and fd(4))
+
+- What: with the image in drive A, OpenBSD 8.0 prints `fd0 at fdc0 drive 1: density unknown`
+  and fd0 is not configured, on `pc` and `q35` (M16a probe). The porting agent's debug print
+  (not committed) showed drive 0's SENSE INTERRUPT after RECALIBRATE answering st0 0xe0 (the
+  "ready changed" code fdcprobe's controller reset leaves, `sys/dev/isa/fdc.c:116`, with SEEK
+  END) and drive 1's 0x21: fdprobe never drains the four statuses a reset leaves (fdintr's
+  reset completion does, `sys/dev/isa/fd.c:885`), and QEMU merges the pending one into the
+  recalibrate's, so fdprobe's check (`sys/dev/isa/fd.c:233`) fails for the first drive.
+- Port: faithful; `storage.rs` puts the image in drive B (unit 1), where both systems attach
+  `fd0 at fdc0 drive 1: 1.44MB 80 cyl, 2 head, 18 sec` (an xtask option, not a deviation).
+- To analyse: whether a real 765 also reports the reset's status there, which would make it
+  fd.c's alone.
 
 ## OpenBSD C slips
 
@@ -2048,6 +2111,126 @@ Every C line in this and the following sections is at the pin 3ce1f3f79392, unde
 - Port's handling: `sys/dev/ic/dc.rs:96` bounds the copy by the cluster.
 - Severity: memory corruption (an out-of-bounds read of the cluster pool into a packet).
 - Fix: drop descriptors without both FIRSTFRAG and LASTFRAG, or longer than the buffer.
+
+### EXT-198: a timed-out mpi_poll leaves a dangling reply pointer
+
+- `sys/dev/ic/mpi.c:1230` (3ce1f3f79392): `mpi_poll` points `ccb_cookie` at its local `rv`
+  and returns on timeout with the ccb still queued; a late completion writes through the
+  pointer into a dead stack frame. Port: the result lives in the ccb (`ccb_poll_rv`), so a
+  late reply writes there (Deviations, `sys/dev/ic/mpi.rs`).
+
+### EXT-199: pcscp stores the FIFO's leftover byte before checking the count
+
+- `sys/dev/pci/pcscp.c:466`: `p += trans; *p = ...` runs before `if (trans < 0)` at line 471,
+  so a negative count writes before the buffer. pcscp is deferred to M17; the partial port on
+  its M17 branch stores the byte only inside the buffer.
+
+### EXT-200: ncr53c9x takes a reselection with no target bit
+
+- `sys/dev/ic/ncr53c9x.c:1341`: a `selid` of 0 passes the one-bit check and gives target
+  `ffs(0) - 1`, which indexes `sc_tinfo` out of bounds. Deferred to M17; the partial port treats
+  it as an invalid selid (DEVICE RESET).
+
+### EXT-201: wdc's odd-length PIO input writes past the buffer
+
+- `sys/dev/ic/wdc.c:1490`, `wdc_input_bytes`: the tail is rounded up to a whole word and read
+  into the buffer, one byte past an odd-length buffer (`wdc_output_bytes`, line 1465, reads one
+  past). Port: the last word goes through a two-byte bounce (`sys/dev/ic/wdc.rs`).
+
+### EXT-202: sdmmc_io_rw_direct releases the bus lock twice
+
+- `sys/dev/sdmmc/sdmmc_io.c:373`: on a `sdmmc_select_card` failure it calls `rw_exit` on
+  `sc_lock`, which every caller holds and releases again. Port: kept as the C.
+
+### EXT-203: pciide's chip maps use an unchecked M_NOWAIT cookie
+
+- `sys/dev/pci/pciide.c:4286`, and 4559, 4888, 5146, 6806, 7503: `sc_cookie` from
+  `malloc(..., M_NOWAIT | M_ZERO)` is used without a NULL check. Port: a failed allocation
+  panics (Deviations, `sys/dev/pci/pciide.rs`).
+
+### EXT-204: ufshci frees the request list the running controller uses
+
+- `sys/dev/ic/ufshci.c:1429`: when `ufshci_ccb_alloc` fails, `ufshci_ccb_free` frees the
+  transfer request list while UTRLBA still points at it and the list runs, and leaks the
+  other two DMA areas. Deferred to M17 (the partial port keeps the C).
+
+### EXT-205: mpi leaks the ccb when mpi_poll fails
+
+- `sys/dev/ic/mpi.c:816` (`mpi_portenable`), 2585 and 2647 (`mpi_req_cfg_header`,
+  `mpi_req_cfg_page`), 3055 (`mpi_ioctl_cache`): the error return leaves the ccb unreturned.
+  Port: kept as the C.
+
+### EXT-206 to EXT-211: pciide chip slips
+
+- EXT-206, `sys/dev/pci/pciide.c:4217` and 4224 (`cmd680_setup_channel`): the DMA and PIO
+  timings write their low and high bytes to the same `off`, so the high byte wins.
+- EXT-207, `sys/dev/pci/pciide.c:6088` (`hpt_chip_map`): the channel loop sets `compatchan` to
+  0 (then `i`), overwriting the value taken from `pa_function` at line 6064.
+- EXT-208, `sys/dev/pci/pciide.c:5018` (`cy693_setup_channel`): `dma_mode` -1 is stored into
+  the `u_int8_t` `DMA_mode` of both drives (255) before it is clamped to 0 at line 5022.
+- EXT-209, `sys/dev/pci/pciide.c:9023` (`rdc_setup_channel`): `patr &= EN(0) | EN(1)` clears the
+  other channel's timings, and the function neither sets the DMA status bits nor prints the
+  modes as the other chips do.
+- EXT-210, `sys/dev/pci/pciide.c:1703` (`pciide_unmapregs_compat`): the control registers are
+  unmapped through `cmd_ioh`.
+- EXT-211, `sys/dev/pci/pciide.c:1787` (`pciide_mapregs_native`): the error path unmaps
+  `ctl_baseioh` with `cmd_iot`.
+- Port: all kept as the C (`sys/dev/pci/pciide.rs`).
+
+### EXT-212, EXT-213: sdmmc loses a failure
+
+- EXT-212, `sys/dev/sdmmc/sdmmc_mem.c:655` (`sdmmc_mem_init`): `error = 1` from a failed select
+  or block-length change is overwritten by the next line.
+- EXT-213, `sys/dev/sdmmc/sdmmc_mem.c:917` (`sdmmc_mem_mmc_init`): a failed bus-width change is
+  overwritten by the clock change's result.
+- Port: both kept as the C.
+
+### EXT-214: wd_flushcache's ENODEV never happens
+
+- `sys/dev/ata/wd.c:1065`: `wdc_c.flags & ERR_NODEV` tests an `ata_bio` error code (5) as an
+  `AT_*` command flag. Port: kept as the C.
+
+### EXT-215: pcscp's attach error path unmaps the wrong pointer
+
+- `sys/dev/pci/pcscp.c:304` (`fail_2`): `bus_dmamem_unmap` is given `sc_mdldmap` (the DMA map)
+  instead of `sc_mdladdr`. Deferred to M17; the partial port unmaps the mapping.
+
+### EXT-216: ncr53c9x reads sc_imess past its end
+
+- `sys/dev/ic/ncr53c9x.c:1454` prints `sc_imess[sc_imlen]` after a dropped byte, with
+  `sc_imlen` possibly 9 or more, and line 2481 reads `sc_imess[sc_imlen - 2]` when `sc_imlen`
+  may be below 2. Deferred to M17; the partial port reads 0 there.
+
+### EXT-217: mpi's cache ioctl reads the rcb as the reply
+
+- `sys/dev/ic/mpi.c:3060`: `rep = (struct mpi_msg_raid_action_reply *)ccb->ccb_rcb` casts
+  the rcb, not `rcb_reply`, so `action_status` is not the reply's. Port: reads the same bytes.
+
+### EXT-218: a failed wddump blocks every later dump
+
+- `sys/dev/ata/wd.c:905`: `wddoingadump` is set before the checks that return ENXIO, EFAULT
+  or EINVAL and is cleared only on success, so a second attempt gets EFAULT; the `wdlookup`
+  reference is never released. Port: kept as the C.
+
+### EXT-219: MAKEDEV numbers fd1's nodes as unit 0
+
+- `etc/etc.amd64/MAKEDEV:606`: `n = U*128 + typnum*64`, but `FDUNIT` is
+  `(minor / MAXPARTITIONSUNIT) / 8` (`sys/dev/isa/fdreg.h:67`), so unit 1 starts at minor
+  512 and the `fd1*` nodes open unit 0 with another density. The ramdisk has only fd0's.
+
+### EXT-220, EXT-221: mpi's bio ioctls read past the inquiry fields
+
+- EXT-220, `sys/dev/ic/mpi.c:3297` (`mpi_ioctl_vol`): `memcpy` of `sizeof bv_vendor` (32)
+  bytes from the 8-byte inquiry vendor field.
+- EXT-221, `sys/dev/ic/mpi.c:3348` (`mpi_ioctl_disk`): `strlcpy` from the 8-byte
+  `vendor_id`, which is not NUL-terminated, runs into `product_id`.
+- Port: both kept as the C.
+
+### EXT-222: mpi_msg_eventack_reply's ioc_status width
+
+- `sys/dev/ic/mpireg.h:754`: `ioc_status` is `u_int32_t` where every other reply has a
+  16-bit one, so the structure is 2 bytes longer than the reply; nothing uses its size.
+  Port: kept.
 
 ## ACPI, consoles, audio and platform
 

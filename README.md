@@ -24,10 +24,10 @@
 
 ## Status
 
-Status: M16d (console, virtio and legacy devices: the PS/2 keyboard and mouse, viogpu, viomb,
-viornd with rnd(4)'s entropy pool, lpt, the PC speaker, eap with midi), M16c (network
-drivers), M16b (USB drivers), M16e (platform drivers) and M16f (arm64 platform) met; the rest
-of M16 (M16a, M16g: storage, install images) under way.
+Status: M16a (storage drivers: IDE with pciide and wd, mpi, vmwpvs, sdhc with the sdmmc stack,
+the floppy with ISA DMA), M16d (console, virtio and legacy devices), M16c (network drivers),
+M16b (USB drivers), M16e (platform drivers) and M16f (arm64 platform) met; the last part of
+M16 (M16g: install images) under way.
 
 | Milestone | Scope | State |
 |---|---|---|
@@ -63,7 +63,8 @@ of M16 (M16a, M16g: storage, install images) under way.
 | M16b | USB drivers: ehci(4), uhci(4), ohci(4), ums(4) and uwacom(4) over hidms, uhid(4), ugen(4) with usbdevs(8), cdce(4), ucom(4) with uftdi(4), uaudio(4); ehci, and a write through ohci, behave as on OpenBSD 8.0 in QEMU | met |
 | M16c | Network drivers: pcn(4), ne(4) (ne2000, dp8390, rtl80x9), fxp(4) with loadfirmware(9) and its microcode, dc(4); the inphy, lxtphy and dcphy PHYs; em(4) on igb and e1000e. tulip and igb pass no traffic, as on OpenBSD 8.0 in QEMU | met |
 | M16d | Console, virtio and legacy devices: pckbc(4), pckbd(4) and pms(4); viogpu(4), viomb(4), viornd(4) with rnd(4)'s entropy pool and /dev/random, viocon(4) (cargo feature); lpt(4); pcppi(4) and spkr(4); eap(4) with midi(4) | met |
-| M16a, M16g | QEMU drivers, the other two parts: storage, install images | next |
+| M16a | Storage drivers: pciide(4) with every chip of its table, wdc and wd(4) (`wd0` on PIIX3), mpi(4) on mptsas1068, sdhc(4) with the sdmmc(4) stack on sdhci-pci, fd(4) and fdc(4) with isadma(4); vmwpvs(4) behaves as on OpenBSD 8.0. mfi, mfii, pcscp and ufshci moved to M17: OpenBSD 8.0 itself fails on QEMU's devices | met |
+| M16g | QEMU drivers, the last part: install images | next |
 | M17 | Real hardware and virtualisation (vmm, vmd; optional) | next |
 
 Stage 2 of the diagnostic tools (ps, fstat, vmstat, df) is also met. Exit criteria and dates are
@@ -127,6 +128,12 @@ On one VM, with OpenBSD's own binaries from the ramdisk:
   PCIe bus), mounted by the label's DUID without a ramdisk (`smoke-nvme`, `smoke-ahci`);
   cd(4) on vioscsi(4) mounting an ISO with mount_cd9660(8) (`smoke-cd`); siop(4) on QEMU's
   LSI 53C895A, amd64 (`smoke-siop`).
+- More disk controllers, each partitioned, newfs'd, written, mounted read-only and compared:
+  wd(4) through pciide(4) on the PIIX3 IDE of QEMU's `pc`, amd64 (`smoke-wd`); mpi(4) on
+  mptsas1068 (`smoke-mpi`) and an SD card through sdhc(4) and sdmmc(4) on sdhci-pci
+  (`smoke-sdmmc`), both archs; fd(4) reads a FAT floppy with mount_msdos(8), amd64
+  (`smoke-fd`); vmwpvs(4) on pvscsi stops at `vmwpvs0: get configuration failed`, as
+  OpenBSD 8.0 does (`smoke-vmwpvs`).
 - ACPI on amd64: the AML interpreter, CPUs and I/O APICs from the MADT, PCI routing, MSI and
   MSI-X (vio(4)'s multiqueue path through intrmap(9), `smoke-mp`), acpitimer and acpihpet
   (`smoke-clock`).
@@ -397,7 +404,7 @@ From `cargo xtask ports status` at the commit of this README:
 
 | todo | wip | ported | skipped | total |
 |---:|---:|---:|---:|---:|
-| 96 | 139 | 1102 | 37 | 1374 |
+| 36 | 139 | 1169 | 37 | 1381 |
 
 The tracker lists the files claimed by the milestones so far, not all of OpenBSD's `sys/`.
 `wip` files are in use with visible stubs. Per subsystem: [docs/PORTING.md](docs/PORTING.md).
