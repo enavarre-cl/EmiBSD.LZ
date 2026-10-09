@@ -42,6 +42,11 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-1 | EDK2 (QEMU 11.1.2's `edk2-aarch64-code.fd`) | `UhciDxe` ASSERT before any OS loads, ~1 in 5 arm64 boots with a UHCI controller | — | — | reproduced | `xtask smoke` boots once more | open |
 | EXT-2 | macOS (host) | an `xtask` process freezes before `main` (`_dyld_start`) | — | — | reproduced, cause unknown | `smoke-all`'s watchdog | open, investigating |
 | EXT-3 | QEMU TCG (arm64, MTTCG, 2+ vCPUs) | a `sev` can be lost, so a `wfe` never wakes | — | — | reproduced | generic timer event stream on (deviation, M11e) | open (the user's decision pending) |
+| EXT-186 | `sys/dev/pci/eap.c:850` | `eap_set_params` refuses every unsigned encoding (case falls into `default`) | user | wrong result | read | same result | open |
+| EXT-184 | `sys/dev/pckbc/pms.c:2088` | Elantech v1 parity table inverted on every re-enable | device | wrong result | read | faithful | open |
+| EXT-185 | `sys/dev/pckbc/pms.c:1726` | Elantech v1..v3 read-back loops take a failed command for success | device | wrong result | read | faithful (v1's buffer zeroed) | open |
+| EXT-182 | `sys/dev/isa/spkr.c:190` | 26 or more dots after a note divide by zero in `playtone` | root | crash | reproduced | same fault (Rust's division panics as the C traps) | open |
+| EXT-181 | `sys/dev/pckbc/pckbd.c:499` | opening the keyboard fails when the opener runs on the CPU that takes IRQ1 | root | wrong result | reproduced | same fault; smokes retry the open | open |
 | EXT-4 | OpenBSD `sys/dev/pci/ehci_pci.c:128` | 16-bit write to the 32-bit EHCI `USBINTR` register; OpenBSD 8.0 panics on arm64 QEMU | firmware/hardware | crash | reproduced | faithful; criterion restated (M16b) | open |
 | EXT-5 | QEMU I/O APIC with OpenBSD's cold routing (amd64) | ehci's INTx raised while its pin is masked and edge-triggered is dropped, the controller never interrupts | — | — | reproduced | faithful; criterion restated (M16b) | open, to analyse |
 | EXT-6 | QEMU `pci-ohci` or OpenBSD ohci(4) | a write to a stick through ohci halts the controller | — | — | reproduced | faithful; criterion restated (M16b) | open, to analyse |
@@ -208,6 +213,11 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-166 | `sys/dev/pci/azalia.c:2926` | uninitialised digital-control value written | firmware/hardware | wrong result | read | fixed | open |
 | EXT-169 | `sys/dev/ipmi.c:1139` | 6-bit sensor names read past the SDR | firmware/hardware | wrong result | read | fixed | open |
 | EXT-179 | `sys/arch/arm64/stand/efiboot/fdt.c:169` | FDT walkers read past the blob | firmware/hardware | wrong result | read | fixed | open |
+| EXT-183 | `sys/dev/pckbc/pckbd.c:685` | `pckbd_xtbl2_ext`'s first row has 15 entries, every later code one off | firmware/hardware | wrong result | read | faithful | open |
+| EXT-187 | `sys/dev/pv/viomb.c:348` | a short deflate records one page fewer than it moved | firmware/hardware | wrong result | read | faithful | open |
+| EXT-188 | `sys/dev/pv/viomb.c:320` | the page-number arrays the host reads are queued device-writable | firmware/hardware | wrong result | read | faithful | open |
+| EXT-190 | `sys/dev/pv/viogpu.c:173` | the `softintr_establish` cookie is dropped and `viogpu_rx_soft` never scheduled | firmware/hardware | cosmetic | read | faithful | open |
+| EXT-191 | `sys/dev/pv/viogpu.c:214` | the attach line lacks its newline before `virtio_attach_finish` prints | firmware/hardware | cosmetic | reproduced | faithful | open |
 | EXT-86 | `sys/dev/usb/ugen.c:393` | failed isochronous open frees started transfers | alloc-failure | memory corruption | read | same fault (see below) | open |
 | EXT-105 | `sys/dev/usb/ucom.c:551` | open failure frees the HID device's transfer | alloc-failure | memory corruption | read | fixed | open |
 | EXT-165 | `sys/dev/pci/azalia_codec.c:1276` | failed mixer growth ignored, array overrun | alloc-failure | memory corruption | read | fixed | open |
@@ -217,6 +227,7 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-113 | `sys/dev/ic/nvme.c:1425` | PRP-list allocation used unchecked | alloc-failure | crash | read | fixed | open |
 | EXT-124 | `sys/dev/pci/if_vmx.c:569` | RSS DMA allocation used unchecked | alloc-failure | crash | read | fixed | open |
 | EXT-174 | `sys/dev/fdt/pciecam.c:223` | NULL extent passed to `extent_free` | alloc-failure | crash | read | fixed | open |
+| EXT-189 | `sys/dev/pv/viogpu.c:296` | attach's error paths unmap the address of the pointer, not the mapping | alloc-failure | crash | read | fixed | open |
 | EXT-78 | `sys/dev/softraid_raid5.c:608` | RAID 5 leaks a strip block on error | alloc-failure | leak | read | fixed | open |
 | EXT-79 | `sys/dev/softraid_raid6.c:632` | RAID 6 leaks blocks and ccbs on error | alloc-failure | leak | read | fixed | open |
 
@@ -2409,6 +2420,131 @@ Every C line in this and the following sections is at the pin 3ce1f3f79392, unde
 - Port's handling: `sys/dev/fdt/pciecam.rs:53-54`.
 - Severity: crash.
 - Fix: check the results.
+
+### EXT-181: pckbd_enable's polled ACK is taken by the interrupt handler
+
+- Where: `sys/dev/pckbc/pckbd.c:499-507`, `pckbd_enable`, with `sys/dev/ic/pckbc.c:1041`,
+  `pckbcintr`.
+- What: opening `/dev/wskbd0` enables the keyboard with `pckbc_poll_cmd(KBC_ENABLE)`
+  while IRQ1 is live. The keyboard answers the 0xF4 with its ACK at once and raises IRQ1;
+  when the opener runs on the CPU that takes IRQ1, `pckbcintr` reads the ACK first (the
+  slot is not polling) and hands 0xFA to `pckbd_input`; the poll times out:
+  `pckbd_enable: command error` and the open fails with EIO.
+- Seen: OpenBSD 8.0 on QEMU q35 `-smp 2` (`diff-openbsd probe`, 2026-10-09): 8 opens of
+  `/dev/wskbd0` with a key typed during each: 48, 48, 0, 0, 0, 0, 48, 48 bytes, every
+  failure printed `pckbd_enable: command error`. EmiBSD the same (4 of 6 `smoke-pckbc` runs
+  before the retry; debug prints showed every failure with the opener on cpu0).
+- Reach: root (`/dev/wskbd0` is 0600; X servers open it).
+- Port's handling: the C is kept (`sys/dev/pckbc/pckbd.rs`); `smoke-pckbc` retries the open.
+- Fix: send KBC_ENABLE through the queue (`pckbc_enqueue_cmd` with `sync`) outside
+  autoconfiguration, or keep the slot polling while the command is in flight.
+
+### EXT-182: spkr's note length divides by zero
+
+- Where: `sys/dev/isa/spkr.c:183-199`, `playtone`.
+- What: each sustain dot doubles `sdenom`; `value * sdenom` (an `int`, `value` up to 64)
+  overflows to 0 after 26 to 30 dots, and `whole * snum / (value * sdenom)` divides by
+  zero. A play string written to `/dev/speaker` reaches it.
+- Seen: OpenBSD 8.0 on QEMU q35 (`diff-openbsd probe --pcspk`, 2026-10-09): `echo
+  "c.............................." > /dev/speaker` (30 dots) as root: `kernel: integer
+  divide fault trap, code=0`, `Stopped at      playtone+0xa4:  idivl   %ecx,%eax`, `ddb{0}>`.
+- Reach: root (`/dev/speaker` is 0600).
+- Port's handling: `sys/dev/isa/spkr.rs` multiplies with wrapping and the division panics,
+  as the C traps (same fault).
+- Fix: bound the dots (`sustain`) or the divisor before dividing.
+
+### EXT-183: pckbd's untranslated set-2 extended table is one entry short
+
+- Where: `sys/dev/pckbc/pckbd.c:684-700`, `pckbd_xtbl2_ext`.
+- What: the `/* 0x00 */` row has 15 entries instead of 16, so the table holds 127 and
+  every later key sits one index below its row comment (right Alt at 0x10, Ctrl-Break 0xc6
+  at 0x7d).
+- Reach: firmware/hardware (only an 8042 that does not translate to set 1 uses it; QEMU's
+  translates).
+- Port's handling: kept (`sys/dev/pckbc/pckbd.rs`).
+- Fix: a 16th `0` in the first row.
+
+### EXT-184: pms's Elantech v1 parity table flips on each enable
+
+- Where: `sys/dev/pckbc/pms.c:2088-2089`, `pms_enable_elantech_v1`.
+- What: `parity[i] = parity[i & (i - 1)] ^ 1` starting at `i = 0` toggles `parity[0]`
+  each time, so every enable after the first inverts the whole table and the v1 packet
+  parity checks then fail (Linux sets `parity[0] = 1` and starts at 1).
+- Reach: device (an Elantech v1 touchpad, re-enabled on resume or reopen).
+- Port's handling: kept (`sys/dev/pckbc/pms.rs`).
+- Fix: start the loop at 1 with `parity[0] = 1`.
+
+### EXT-185: pms's Elantech read-back loops break on failure
+
+- Where: `sys/dev/pckbc/pms.c:1726`, `1769` and `1801`, `elantech_set_absolute_mode_v1`
+  to `_v3`.
+- What: `if (pms_spec_cmd(..) || pms_spec_cmd(..) || pms_get_status(..) == 0) break;`
+  leaves the retry loop when a command fails as when the status read succeeds; v1 then
+  checks `resp[0]`, which the failed path never set.
+- Reach: device.
+- Port's handling: kept; `sys/dev/pckbc/pms.rs` zeroes the buffer, so v1 reports the
+  failure where the C reads stack garbage.
+- Fix: retry while a command fails, break only on a good status.
+
+### EXT-186: eap refuses 8-bit unsigned audio
+
+- Where: `sys/dev/pci/eap.c:850-855`, `eap_set_params`.
+- What: `case AUDIO_ENCODING_ULINEAR_LE: case AUDIO_ENCODING_ULINEAR_BE: if (p->precision
+  != 8) return EINVAL;` has no `break` and falls into `default: return (EINVAL);`, so
+  8-bit unsigned, which the hardware plays, is always refused.
+- Reach: user (an audio(4) client in `_sndiop`); audio(4) then falls back to 16-bit.
+- Port's handling: `sys/dev/pci/eap.rs` returns EINVAL for both (same result).
+- Fix: `break;` after the precision check.
+
+### EXT-187: viomb's deflate count is one short
+
+- Where: `sys/dev/pv/viomb.c:345-350`, `viomb_deflate`.
+- What: when the balloon list runs out after `i` pages were moved to the request,
+  `b->bl_nentries = i - 1` records one fewer; the request still sends `nvpages` words.
+- Reach: firmware/hardware (the host asks to deflate more than was inflated).
+- Port's handling: kept (`sys/dev/pv/viomb.rs`).
+- Fix: `b->bl_nentries = i;` and send `i` words.
+
+### EXT-188: viomb queues its page arrays with the wrong direction
+
+- Where: `sys/dev/pv/viomb.c:319-320` and `369-370`, with the file's `VRING_READ 0`
+  (58) and `sys/dev/pv/virtio.c:724-725`.
+- What: the inflate and deflate arrays, which the device reads, go to
+  `virtio_enqueue_p(..., VRING_READ)`, and `write == 0` sets `VRING_DESC_F_WRITE`
+  (device-writable). The virtio specification has the driver's data read-only to the
+  device; QEMU does not check.
+- Reach: firmware/hardware (a strict device would refuse the requests).
+- Port's handling: kept (`sys/dev/pv/viomb.rs`).
+- Fix: pass 1 (driver-written) for these buffers.
+
+### EXT-189: viogpu's attach unwinds with the wrong address
+
+- Where: `sys/dev/pv/viogpu.c:296` and `303`, `viogpu_attach`.
+- What: `bus_dmamem_unmap(vsc->sc_dmat, (caddr_t)&sc->sc_fb_dma_kva, ...)` and
+  `(caddr_t)&sc->sc_cmd` pass the address of the softc member, not the mapped kva.
+- Reach: alloc-failure (a later step of the attach failing).
+- Port's handling: `sys/dev/pv/viogpu.rs` unmaps the kva.
+- Fix: drop the `&`.
+
+### EXT-190: viogpu's soft interrupt is never used
+
+- Where: `sys/dev/pv/viogpu.c:173`.
+- What: `softintr_establish(IPL_TTY, viogpu_rx_soft, vsc)`'s handle is thrown away, so
+  `viogpu_rx_soft` (349) can never be scheduled, and the handler is leaked.
+- Reach: firmware/hardware (every attach).
+- Port's handling: kept (`sys/dev/pv/viogpu.rs`).
+- Fix: keep the handle and schedule it from the queue's done routine, or remove both.
+
+### EXT-191: viogpu's attach line runs into virtio's
+
+- Where: `sys/dev/pv/viogpu.c:149-214`, `viogpu_attach`, and `275`.
+- What: nothing ends `viogpu0 at virtioN` before `virtio_attach_finish` prints
+  `virtioN: msix per-VQ`, and the size comes on a line of its own.
+- Seen: OpenBSD 8.0 on QEMU virt with `virtio-gpu-pci` (`diff-openbsd probe`):
+  `viogpu0 at virtio32virtio32: msix per-VQ`, then `: 1280x800, 32bpp`.
+- Reach: firmware/hardware.
+- Port's handling: the same lines (`smoke-viogpu` expects them).
+- Fix: `printf("\n")` before `virtio_attach_finish`, the size after the name.
 
 ## boot loaders
 
