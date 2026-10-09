@@ -36,6 +36,7 @@ pub mod dp8390var;
 pub mod fxp;
 pub mod fxpreg;
 pub mod fxpvar;
+pub mod i8237reg;
 pub mod i8253reg;
 pub mod lancereg;
 pub mod mc146818reg;
