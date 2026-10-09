@@ -1032,3 +1032,59 @@ time, merged into the coordinator's branch.
 Effort: _(user)_
 
 Time: _(user)_
+
+## M16c Network drivers
+
+Boundary: the commit that marks M16c met ("docs: M16c met"). The M16c work started on f5985f1
+(M16b's close) in a first coordinator branch whose run was stopped at about midnight on
+2026-10-09 for the repository refactor (EmiBSD to EmiBSD.LZ); it resumed on a18bd6be in a new
+coordinator branch that merged the old one. Its own work is `main..` that commit: 16
+commits (with this one; `git rev-list --count --no-merges main..`) besides 4 merges,
+`git diff --shortstat main HEAD`: 47 files changed, 19017 insertions(+), 86 deletions(-) before this commit. Three subagents in harness
+worktrees, all at once: dc and its PHYs (Opus), fxp with loadfirmware(9), its microcode and
+inphy (Sonnet), pcn then ne (Sonnet), each resuming from the first run's notes and patches.
+
+- Went well: the first run's leftovers. The killed agents' uncommitted work had been saved as
+  `git diff` patches with intent-to-add (new files included); `git apply --3way` restored them
+  on the new tree, so pcn came back pinging and fxp came back at its first commit within the
+  hour. The OpenBSD 8.0 probes of the first run (`diff-openbsd probe --nic MODEL`) were kept as
+  logs and given to the agents, so no one re-ran them.
+- Went well: real OpenBSD 8.0 as the referee, a fourth time. QEMU's tulip and igb pass no
+  traffic under OpenBSD 8.0 either (`dc0: failed to force tx to idle state`, `dc0: watchdog
+  timeout`, 0 packets received; em0 on the 82576 links and receives nothing), so dc and em
+  stayed faithful, `smoke-dc` and `smoke-igb` assert OpenBSD's lines, and the criterion was
+  restated as "behaves as OpenBSD 8.0" (ROADMAP). dc's port prints OpenBSD's lines in
+  OpenBSD's order. pcn, ne and fxp ping as OpenBSD does, fxp without its microcode on the
+  ramdisk as on bsd.rd.
+- Went well: faithful firmware. `dev/microcode/fxp/build.c` became `userland/firmware.rs`,
+  which reads the arrays out of the same `rcvbundl.h` the kernel port uses and puts the seven
+  `fxp-*` files and `fxp-license` in the base set, as the C's Makefile installs them; the
+  ramdisk lists name none, so bsd.rd's behaviour is kept.
+- Failed: the harness stopped the coordinator twice mid-run and made it hand back; the main
+  session resumed it from HANDOFF.md each time. The handoff note, kept current after every
+  step, is what made that cheap.
+- Failed: `cfdata[]` once more. All three agents appended at 77 and moved `cpu*`; the merges
+  renumbered by script into one order (pcn, ne, fxp, inphy, dc, lxtphy, dcphy; `cpu*` 84),
+  and `PV_MII` now lists every device with the `mii` attribute (re, pcn, ne, fxp, dc), which
+  each agent had set to itself alone. Two pcidevs lists carried `PCI_VENDOR_COMPEX`.
+- Failed: an agent took a smoke whose expectation could never match (a quoted chip name) for
+  a hang; xtask's 180 s limit was checked with a deliberately bogus `--expect` and does stop
+  it (`timed out after 180s ... NOT seen`). A 23-minute rustc at 100% CPU (once, on two
+  worktrees at the same time) did not come back.
+- Idioms: none new. The DP8390 callbacks are `Option<fn>` and its ring copy takes a slice;
+  ne2000_readmem reads the C's rounding word and drops its extra byte instead of writing past
+  an odd destination; dc fixes five C slips it documents (the PCI softc size, the Conexant
+  address read from the softc, a half-initialised `mac_offset`, the detach unmap size, the
+  ASIX filter's second word).
+- Rules: none changed; `xtask.md` gains the M16c `--nic` models, `diff-openbsd probe --nic`
+  and `userland/firmware.rs`; `LICENSE` names David Greenman's DP8390 notice.
+- Open: dcphy(4) is ported but QEMU's tulip has a real PHY, so it is matched and never
+  attached; `GWETHER` in ne2000.c (no configuration defines it) is not ported.
+- Numbers: ported 1042 → 1070 (`cargo xtask ports status`, totals 123 todo, 140 wip, 1070 ported, 37 skipped, 1370 entries); tests bsd
+  2496 → 2537 (2310 passed, 227 ignored in `just test`); smoke recipes 67 → 72 (smoke-igb,
+  smoke-pcn, smoke-ne, smoke-fxp, smoke-dc); unsafe-report kernel 8198 → 8313 blocks.
+  `just jobs=3 ci` rc=0 in 18m56s (72 of 72 smokes in 15m18s); `just diff-openbsd` rc=0, 102 steps, 99 equal, 3 expected, 0 unexpected, on both archs.
+
+Effort: _(user)_
+
+Time: _(user)_

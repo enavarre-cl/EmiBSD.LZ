@@ -24,9 +24,9 @@
 
 ## Status
 
-Status: M16b (USB drivers: ehci, uhci, ohci, mice and tablets, uhid, ugen, cdce, ucom with
-uftdi, uaudio), M16e (platform drivers) and M16f (arm64 platform) met; the rest of M16 (M16a,
-M16c, M16d, M16g: storage, network, console/virtio/legacy, install images) under way.
+Status: M16c (network drivers: pcn, ne, fxp with its microcode, dc, and em on igb and e1000e),
+M16b (USB drivers), M16e (platform drivers) and M16f (arm64 platform) met; the rest of M16
+(M16a, M16d, M16g: storage, console/virtio/legacy, install images) under way.
 
 | Milestone | Scope | State |
 |---|---|---|
@@ -60,7 +60,8 @@ M16c, M16d, M16g: storage, network, console/virtio/legacy, install images) under
 | M16f | arm64 platform: agintc(4) (GICv3, LPIs, the ITS), smmu(4) (SMMUv2 and v3), gpio(4), plgpio(4) and gpiokeys(4); every arm64 smoke on `gic-version=3` | met |
 | M16e | Platform drivers: UKC (`boot -c`), ppb(4), acpidmar(4) (VT-d and AMD-Vi), iic(4) with ichiic(4) and piixpm(4), ipmi(4) with the watchdog and SMBIOS, tpm(4) on swtpm, acpicpu(4) | met |
 | M16b | USB drivers: ehci(4), uhci(4), ohci(4), ums(4) and uwacom(4) over hidms, uhid(4), ugen(4) with usbdevs(8), cdce(4), ucom(4) with uftdi(4), uaudio(4); ehci, and a write through ohci, behave as on OpenBSD 8.0 in QEMU | met |
-| M16a, M16c, M16d, M16g | QEMU drivers, the other four parts: storage, network, console/virtio/legacy devices, install images | next |
+| M16c | Network drivers: pcn(4), ne(4) (ne2000, dp8390, rtl80x9), fxp(4) with loadfirmware(9) and its microcode, dc(4); the inphy, lxtphy and dcphy PHYs; em(4) on igb and e1000e. tulip and igb pass no traffic, as on OpenBSD 8.0 in QEMU | met |
+| M16a, M16d, M16g | QEMU drivers, the other three parts: storage, console/virtio/legacy devices, install images | next |
 | M17 | Real hardware and virtualisation (vmm, vmd; optional) | next |
 
 Stage 2 of the diagnostic tools (ps, fstat, vmstat, df) is also met. Exit criteria and dates are
@@ -131,7 +132,11 @@ On one VM, with OpenBSD's own binaries from the ramdisk:
   (`smoke-power`); the date from the RTC within a minute of the host (`smoke-rtc`); com(4)
   on QEMU's pci-serial through puc(4), amd64 (`smoke-puc`).
 - em(4) on QEMU's e1000e (both archs) and e1000 (amd64), re(4) on rtl8139 and vmx(4) on
-  vmxnet3 with four MSI-X queues ping QEMU's gateway (`smoke-em`, `smoke-re`, `smoke-vmx`).
+  vmxnet3 with four MSI-X queues ping QEMU's gateway (`smoke-em`, `smoke-re`, `smoke-vmx`);
+  so do pcn(4) on pcnet, ne(4) on ne2k_pci and fxp(4) with inphy(4) on i82559er, amd64
+  (`smoke-pcn`, `smoke-ne`, `smoke-fxp`). dc(4) with lxtphy(4) on tulip (amd64) and em(4)
+  on igb (both archs) attach, link and, as on OpenBSD 8.0, pass no traffic (`smoke-dc`,
+  `smoke-igb`).
 - The frame buffer (efifb(4), simplefb) with wsdisplay(4) and the vt100 emulation: text
   written to `/dev/ttyC0` is read back from a QEMU screendump (`smoke-fb`, `smoke-wscons`);
   keys typed on QEMU's USB keyboard reach a reader of `/dev/ttyC0` and `/dev/wskbd0`
@@ -380,7 +385,7 @@ From `cargo xtask ports status` at the commit of this README:
 
 | todo | wip | ported | skipped | total |
 |---:|---:|---:|---:|---:|
-| 144 | 140 | 1042 | 37 | 1363 |
+| 123 | 140 | 1070 | 37 | 1370 |
 
 The tracker lists the files claimed by the milestones so far, not all of OpenBSD's `sys/`.
 `wip` files are in use with visible stubs. Per subsystem: [docs/PORTING.md](docs/PORTING.md).
