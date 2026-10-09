@@ -11598,22 +11598,56 @@ notes = "M16: pcscp(4); criterion: a disk on QEMU's am53c974 (and dc390) mounted
 [[file]]
 c = "sys/dev/ic/dcreg.h"
 rust = "sys/dev/ic/dcreg.rs"
-status = "todo"
-notes = "M16: DEC 21x4x (tulip) registers"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "4efe9303168643240eba4cb2f3702cbd4238b08f"
+deps = ["sys/dev/mii/miivar.h", "sys/netinet/if_ether.h"]
+notes = "M16c: license: BSD-4 (Bill Paul), kept whole; the whole header: registers and bits, struct dc_desc (repr(C), words read and written one at a time, volatile, in host order through DcSoftc accessors), dc_list_data (offsets for the syncs), dc_swdesc (the setup-frame stand-in pointer is the flag sd_setup), dc_chain_data, dc_mediainfo (offsets into dc_srom instead of pointers), dc_type, dc_mii_frame, the SROM leaf and block structs, struct dc_softc with DC_IS_*/DC_HAS_BROKEN_RXSTATE predicates and CSR/DC_SETBIT/DC_CLRBIT/DC_PN_GPIO_* accessors, DC_RXBYTES, DC_INC, DC_SP_FIELD; SRM_MEDIA (alpha) not defined; test-ref of every define"
 
 [[file]]
 c = "sys/dev/ic/dc.c"
 rust = "sys/dev/ic/dc.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "fda85b84140749c8f406de3693edd330ab3aac6c"
 deps = ["sys/dev/ic/dcreg.h"]
-notes = "M16: dc(4); criterion: QEMU's tulip pings 10.0.2.2; amd64 GENERIC only"
+notes = "M16c: license: BSD-4 (Bill Paul), kept whole; the whole file (EEPROM and bit-banged MII access, the PNIC/AL981 PHY paths, the 21143/ADMtek/ASIX/Xircom filters, dc_setcfg, SROM leaf parsing, rings, PNIC rx bug workaround, rxeof/txeof/tick/intr/start/init/ioctl/watchdog/stop/activate/detach); not MP-safe as in C (if_start, IPL_NET); deviations: dc_read_eeprom fills a byte slice; mac_offset read into a zeroed word; Conexant address from the SROM (the C's &sc->dc_srom + off reads the softc); ASIX PAR1 word from the last two address bytes and two zeros; SROM reads bounds-checked (0 past the end, dc_apply_fixup stops); dc_pnic_rx_bug_war and dc_rxeof bounded by the PNIC buffer and the cluster; dc_detach unmaps the whole list (the C passes nseg as size); BUS_DMA_OVERRUN 0; pure helpers host-tested (dc_crc_le_bits, dc_eeprom_word_bytes, dc_srom_blocks, dc_leaf_mii_info, dc_fixup_words, dc_sia_media, dc_pnic_salvage); smoke-dc: QEMU's tulip behaves as on OpenBSD 8.0 (attach, lxtphy0, tx idle messages, no frame received)"
 
 [[file]]
 c = "sys/dev/pci/if_dc_pci.c"
 rust = "sys/dev/pci/if_dc_pci.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "a0132a3b75dc5a639d72f78241ceaa1b55bbf081"
 deps = ["sys/dev/ic/dc.c"]
-notes = "M16: dc at pci"
+notes = "M16c: license: BSD-4 (Bill Paul), kept whole; the whole file: dc_devs[] (no terminator), dc_pci_match (pure dc_pci_match_id, host-tested), dc_pci_attach (I/O space: DC_USEIOSPACE; chip switch as dc_pci_chip), dc_pci_detach (Result), dc_pci_ca with dc_activate; ca_devsize is sizeof(struct dc_pci_softc) (the C's sizeof(struct dc_softc) is a bug); __sparc64__ and SRM_MEDIA not compiled; dc* at pci? on amd64 (GENERIC; cardbus out of scope)"
+
+[[file]]
+c = "sys/dev/mii/lxtphyreg.h"
+rust = "sys/dev/mii/lxtphyreg.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "56e0db8dd0e3c89d7e58f5b2fb00c3334a117d66"
+deps = []
+notes = "M16c: the whole header (LXT970 registers and bits, i32 as PHY_READ returns them); test-ref of every define"
+
+[[file]]
+c = "sys/dev/mii/lxtphy.c"
+rust = "sys/dev/mii/lxtphy.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "bee7dea95c0a57676f20a896a19123afa2ea8f91"
+deps = ["sys/dev/mii/mii_physubr.c", "sys/dev/mii/miidevs.h", "sys/dev/mii/lxtphyreg.h", "sys/dev/mii/ukphy_subr.c"]
+notes = "M16c: the whole file: lxtphy_ca/lxtphy_cd, lxtphy_funcs and lxtphy971_funcs (ukphy_status), lxtphys[] (no terminator), lxtphymatch, lxtphyattach, lxtphy_service (Result), lxtphy_status (decision in the pure lxtphy_media, host-tested), lxtphy_reset; lxtphy* at mii? on amd64; takes QEMU's tulip PHY (OpenBSD 8.0: lxtphy0 at dc0 phy 1: LXT970, rev. 0)"
+
+[[file]]
+c = "sys/dev/mii/dcphy.c"
+rust = "sys/dev/mii/dcphy.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "102c49b51208a0624cfb8422fbccca18b65349bf"
+deps = ["sys/dev/mii/mii_physubr.c", "sys/dev/mii/miidevs.h", "sys/dev/ic/dcreg.h"]
+notes = "M16c: license: BSD-4 (Bill Paul), kept whole; the whole file: dcphy_ca/dcphy_cd, dcphy_funcs, MIIF_AUTOTIMEOUT, COMPAQ_PRESARIO_ID, dcphy_match (the xxDEC/xxDC id dc makes up at MII address 31), dcphy_attach, dcphy_service (Result), dcphy_status (link-partner choice in the pure dcphy_anlpar_media, host-tested), dcphy_mii_phy_auto (Result: EJUSTRETURN/EIO as Err), dcphy_reset; the C's local DC_SETBIT/DC_CLRBIT are DcSoftc's; dcphy* at mii? on amd64; QEMU's tulip has a real MII PHY, so dcphy does not attach there"
 
 [[file]]
 c = "sys/dev/ic/lptreg.h"
