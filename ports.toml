@@ -11158,9 +11158,11 @@ notes = "M16: MPI-2 registers mfii.c reads"
 [[file]]
 c = "sys/dev/pci/vmwpvs.c"
 rust = "sys/dev/pci/vmwpvs.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "b8741b7a2fb3754c910e03025d68efb3d5340a6d"
 deps = ["sys/scsi/scsiconf.c"]
-notes = "M16: vmwpvs(4); criterion: QEMU's pvscsi disk mounted; amd64 GENERIC only"
+notes = "M16a: vmwpvs(4), whole file, amd64 GENERIC only; QEMU's pvscsi has no VMWPVS_CMD_CONFIG, so attach stops at 'get configuration failed' exactly as OpenBSD 8.0 does on the same QEMU (smoke-vmwpvs); a completion naming no opening panics where the C indexes past sc_ccbs; a CDB over 16 bytes is cut to the request's 16"
 
 [[file]]
 c = "sys/dev/sdmmc/sdhcreg.h"
