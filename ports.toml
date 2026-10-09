@@ -2891,7 +2891,7 @@ status = "ported"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "04118eee34ad45e0c0fc409186e9471356f83470"
 deps = ["sys/sys/exec.h", "sys/uvm/uvm_map.c", "sys/dev/rnd.c", "sys/kern/kern_malloc.c"]
-notes = "M8: exec_process_vmcmds, vmcmd_map_pagedvn (uvn_attach and a copy-on-write uvm_map of the vnode's object, pgo_detach on failure), vmcmd_map_readvn (vn_rdwr UIO_USERSPACE into an anonymous overlay mapping), vmcmd_map_zero, vmcmd_mutable, vmcmd_randomize (no private arc4random_ctx), exec_setup_stack (lim_cur(RLIMIT_STACK), VM_MIN_STACK_ADDRESS randomisation); new_vmcmd (vref)/vmcmdset_extend/kill_vmcmds (vrele) are ExecVmcmdSet in sys/exec.rs; for the init boot module (ExecFile::Image) pagedvn/readvn copy the image's bytes out instead; 4-clause licence accepted at M2"
+notes = "M8: exec_process_vmcmds, vmcmd_map_pagedvn (uvn_attach and a copy-on-write uvm_map of the vnode's object, pgo_detach on failure), vmcmd_map_readvn (vn_rdwr UIO_USERSPACE into an anonymous overlay mapping), vmcmd_map_zero, vmcmd_mutable, vmcmd_randomize (M16d: a private arc4random_ctx past RANDOMIZE_CTX_THRESHOLD, as in C; ENOMEM if it gets no memory), exec_setup_stack (lim_cur(RLIMIT_STACK), VM_MIN_STACK_ADDRESS randomisation); new_vmcmd (vref)/vmcmdset_extend/kill_vmcmds (vrele) are ExecVmcmdSet in sys/exec.rs; for the init boot module (ExecFile::Image) pagedvn/readvn copy the image's bytes out instead; 4-clause licence accepted at M2"
 
 [[file]]
 c = "sys/kern/kern_exec.c"
