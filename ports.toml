@@ -11255,28 +11255,44 @@ notes = "M16: sdhc at pci; criterion: QEMU's sdhci-pci with an sd-card mounted, 
 [[file]]
 c = "sys/dev/midi.c"
 rust = "sys/dev/midi.rs"
-status = "todo"
-deps = ["sys/dev/midi_if.h"]
-notes = "M16: midi(4), which amd64 GENERIC attaches at eap; no QEMU device plays MIDI, so it is checked to attach only"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "eda19823c01550339ff412f0d81664eaf4efe80a"
+deps = ["sys/dev/midi_if.h", "sys/dev/midivar.h"]
+notes = "M16d: the whole file: midi_buf_wakeup, midi_iintr, midiread, midi_ointr, midi_timeout, midi_out_start/stop/do, midiwrite, midikqfilter and its filters, midiioctl (ENOTTY), midiopen, midiclose, midiprobe, midiattach (DIAGNOSTIC method check under the diagnostic feature), mididetach, midiprint, midi_attach_mi; the device_lookup/device_unref pairs are a drop guard; missing driver methods panic by name where the C calls NULL; cdevsw 52 on both archs (NMIDI 1: midi* at eap? on amd64, midi* at umidi? on arm64, umidi not ported); midi0 at eap0 attaches under QEMU's ES1370 (smoke-eap), no QEMU device plays MIDI"
 
 [[file]]
 c = "sys/dev/midi_if.h"
 rust = "sys/dev/midi_if.rs"
-status = "todo"
-notes = "M16: the midi_hw_if interface"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "09755cbe062db64e6ff80f347a79688ff10913e1"
+notes = "M16d: midi_info (name a &'static str), MIDI_PROP_*, midi_hw_if as a table of Option<unsafe fn> over the void * handle (the audio_if.h idiom); midi_attach_mi lives in midi.rs; reference-backed test of the constants"
+
+[[file]]
+c = "sys/dev/midivar.h"
+rust = "sys/dev/midivar.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "b906d961c75c5e333b7e9a2a6e7ea6c25f24f73e"
+notes = "M16d: MIDI_RATE, MIDIBUF_SIZE/MASK, struct midi_buffer with the MIDIBUF_* macros as methods (data in an UnsafeCell for uiomove), struct midi_softc (Cells, protected by audio_lock); host test of the ring"
 
 [[file]]
 c = "sys/dev/pci/eapreg.h"
 rust = "sys/dev/pci/eapreg.rs"
-status = "todo"
-notes = "M16: ES1370/ES1371 registers"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "dbc46d45b13f575dde62ea47fdb4fcea0e6f6187"
+notes = "M16d: every define, typed by use (register offsets usize, 32-bit register bits u32, UART bits u8, AK4531/SRC/mixer numbers i32), the function-like macros as lower-case const fns; EAP_JYSTK_EN (defined twice) once; SRC_MAGIC keeps the C's (1<15) (unused); host tests of the macros, reference-backed test of every define"
 
 [[file]]
 c = "sys/dev/pci/eap.c"
 rust = "sys/dev/pci/eap.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "ec8673dbfb026fb8c4756fd89a60093bce75e0c6"
 deps = ["sys/dev/pci/eapreg.h", "sys/dev/audio.c", "sys/dev/midi.c"]
-notes = "M16: eap(4); criterion: QEMU's ES1370 plays the tone (--expect-tone); amd64 GENERIC only"
+notes = "M16d: the whole file (NMIDI > 0): eap_match (eap_devices[]), eap_attach (ES1370: AK4531 reset and mixer defaults through its set_port; ES1371/ES1373/CT5880: SRC programmed for 48 kHz, ac97(4) host), eap_resume/eap_activate, the AK4531 and ES1371 codec access with their timeouts, eap_intr (ADC, DAC2, UART), DMA list (eap_malloc adds M_ZERO to its node), set_params (ULINEAR returns EINVAL at once: the C's case falls through to default), trigger/halt, the ES1370 mixer (set_port, get_port, query_devinfo) and the ES1371 ones through the codec, the MIDI UART (open, close, output, getinfo); sc_prun/sc_rrun checked under the diagnostic feature; eap* at pci?, audio* at eap? and midi* at eap? in amd64's ioconf (amd64 GENERIC only); host tests (mixer bits, devinfo, blocksize, midi info); smoke-eap: ES1370 plays the tone"
 
 [[file]]
 c = "sys/dev/usb/uaudio.c"
