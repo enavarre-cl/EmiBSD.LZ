@@ -1913,6 +1913,15 @@ upstream_blob = "75810b4bf6b9f1daebb9cbb76078717a07977ae1"
 notes = "M16a: ISA_DMA_BOUNCE_THRESHOLD, struct isa_dma_cookie (Cells; the zero-length id_bouncesegs[] after the header, reached by the unsafe id_bouncesegs(n)), ID_*; isa_chipset_tag_t and the prototypes are isa_machdep.c's port and machine::isa_machdep; atdevbase, ISA_PHYSADDR and ISA_HOLE_VADDR are not ported (the ISA hole is the direct map's, no driver converts hole addresses); wip until they are; test-ref of the constants (arch tests run only on the bare target)"
 
 [[file]]
+c = "sys/arch/amd64/include/ioctl_fd.h"
+rust = "sys/arch/amd64/include/ioctl_fd.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "b0c4c6f9ce0d760d58408223fc12e6c3a4c40366"
+deps = ["sys/sys/ioccom.h", "sys/dev/isa/fdreg.h"]
+notes = "M16a: FD_FORMAT_VERSION, FD_MAX_NSEC, struct fd_formb (repr(C); its format_info union is the structured member, raw[] being only a view of it; the fd_formb_* macros are field names), struct fd_idfield_data, struct fd_form_data, struct fd_type (repr(C), name a pointer to a static NUL-terminated string, FdType::name reads it; Sync), FD_FORM/FD_GTYPE/FD_STYPE/FD_GOPTS/FD_SOPTS, FDOPT_NORETRY; the FDC_*KBPS duplicates are fdreg.h's, re-exported; sizes asserted at compile time; reached by generic code through machine::x86"
+
+[[file]]
 c = "sys/arch/arm64/arm64/autoconf.c"
 rust = "sys/arch/arm64/arm64/autoconf.rs"
 status = "wip"
@@ -11943,28 +11952,46 @@ notes = "M16a: isadma_ca/isadma_cd, isadmamatch, isadmaattach (isa_dev, the eigh
 [[file]]
 c = "sys/dev/isa/fdreg.h"
 rust = "sys/dev/isa/fdreg.rs"
-status = "todo"
-notes = "M16: floppy controller registers"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "6fd22862a96a64dc2236763fbcf6820eb91de1c1"
+deps = ["sys/dev/ic/nec765reg.h"]
+notes = "M16a: the whole header: the register offsets keep their lower-case names (fdout, fdsts, fddata, fdctl, fdin; non_upper_case_globals allowed), FDO_*, FDC_*KBPS, FDI_DCHG, FDC_NPORT, FDCTL_NPORT, FDC_MAXIOSIZE; FDO_MOEN/FDUNIT/FDTYPE/FDPART as const fn fdo_moen/fdunit/fdtype/fdpart, FD_BSIZE(fd) as fd_bsize of the type's size code; nec765reg.h re-exported as the C includes it; host test of the minor-number macros, test-ref"
+
+[[file]]
+c = "sys/dev/ic/nec765reg.h"
+rust = "sys/dev/ic/nec765reg.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "7931e71bb83e43fd294df699d2fbcfd7bac282f5"
+notes = "M16a: the whole header: main status bits, ST0-ST3 bits with their %b strings as byte strings for Bitmask, NE7CMD_* commands, NE7_SPEC_1/NE7_SPEC_2 as const fn ne7_spec_1/ne7_spec_2; host tests of the %b output (OpenBSD 8.0's \"st0 21<seek_cmplt>\") and the specify bytes, test-ref of every define"
 
 [[file]]
 c = "sys/dev/isa/fdlink.h"
 rust = "sys/dev/isa/fdlink.rs"
-status = "todo"
-notes = "M16: fdc/fd linkage"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "08b0fe3ab53fd83ec4488ef1cd85238d5afdfffa"
+deps = ["sys/sys/device.h", "sys/dev/isa/isavar.h"]
+notes = "M16a: enum fdc_state and enum fdc_type as i32 constants (fdtimeout steps the state with ++), struct fdc_fdlink (sc_fd[] as Cell<Option<&FdSoftc>>, sc_drives a TailqHead over fd.rs's FdDrivechain), struct fdc_softc (Cells, Softc; the sc_link union is the disk link alone: struct ft_softc exists nowhere in the tree), struct fdc_attach_args; the prototypes are fdc.c's and fd.c's; cfg machine_x86 (struct fd_type is x86's <machine/ioctl_fd.h>)"
 
 [[file]]
 c = "sys/dev/isa/fdc.c"
 rust = "sys/dev/isa/fdc.rs"
-status = "todo"
-deps = ["sys/dev/isa/fdreg.h", "sys/dev/isa/fdlink.h", "sys/dev/isa/isa.c"]
-notes = "M16: fdc(4); amd64 GENERIC only"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "db3c9e0b9f453c46fca7d8aa2dcd54f57ebb43d1"
+deps = ["sys/dev/isa/fdreg.h", "sys/dev/isa/fdlink.h", "sys/dev/isa/isa.c", "sys/arch/amd64/isa/clock.c", "sys/arch/amd64/isa/nvram.h"]
+notes = "M16a: fdc_ca/fdc_cd, fdcprobe (reset + specify; the C's leak of the first mapping when the second fails kept), fdcattach (isa_intr_establish at IPL_BIO, kthread_create_deferred), fdc_create_kthread, fdcattach_deferred (NVRAM_DISKETTE through mc146818_read on fdc0, fd_nvtotype for drives 0-1, config_found for drives 0-3, kthread_exit), fddprint, fdcresult and out_fdc (Result: the C's -1 is Err(EIO), fdcresult's count the Ok value), fdcstart, fdcstatus (%b through Bitmask), fdcpseudointr, fdcintr (NFD > 0: fdintr); DIAGNOSTIC checks under feature diagnostic; cfg machine_x86 (the NVRAM read and struct fd_type are x86 items, reached through machine::x86)"
 
 [[file]]
 c = "sys/dev/isa/fd.c"
 rust = "sys/dev/isa/fd.rs"
-status = "todo"
-deps = ["sys/dev/isa/fdc.c", "sys/dev/isa/isadma.c"]
-notes = "M16: fd(4); criterion: a 1.44 MB image on QEMU's floppy read with mount_msdos; amd64 GENERIC only"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "f41105fe66ae197b17640913ef27f5384516643c"
+deps = ["sys/dev/isa/fdc.c", "sys/dev/isa/isadma.c", "sys/arch/amd64/include/ioctl_fd.h", "sys/kern/subr_disk.c", "sys/kern/kern_physio.c", "sys/kern/kern_bufq.c"]
+notes = "M16a: fd_types[] (FD_TYPES), struct fd_softc (Cells, Softc, FdDrivechain adapter), fd_ca/fd_cd, fdgetdisklabel (a local label installed by fdopen/DIOCRLDINFO, as wd.rs), fdprobe, fdattach (DKF_NOLABELREAD, disk_attach, bufq_init, the three timeouts), fdactivate, fd_nvtotype, fd_dev_to_type, fdstrategy, fdstart, fdfinish, fdread/fdwrite (physio), fd_set_motor, fd_motor_off, fd_motor_on, fdopen, fdclose, fdsize (-1), fddump (ENXIO), fdintr (the switch with its doseek/doio labels as an inner loop; isadma_start's result ignored as in C), fdtimeout, fdretry, fdioctl (MTIOCTOP, DIOC*, FD_FORM, FD_GTYPE, FD_GOPTS, FD_SOPTS; FD_STYPE ENOTTY as in C; addr the ioctl's kernel copy), fdformat (B_FORMAT = B_XXX; the request read unaligned); unit lookups panic where the C dereferences NULL; DIAGNOSTIC checks under feature diagnostic; cfg machine_x86; bdevsw 2/cdevsw 9 on amd64 (NFD 1); smoke-fd"
 
 [[file]]
 c = "sys/dev/isa/pcppireg.h"
