@@ -10883,21 +10883,27 @@ notes = "M16: viocon(4) virtio console; commented out in amd64 GENERIC and absen
 [[file]]
 c = "sys/dev/ic/am79900reg.h"
 rust = "sys/dev/ic/am79900reg.rs"
-status = "todo"
-notes = "M16: PCnet-PCI II descriptor layouts for pcn(4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "4ec7a9c31c23443b6304e01a3af4ee6a9d70b0c3"
+notes = "M16c: the 32-bit software model descriptors (lermd, letmd, leinit) and their bits for pcn(4); the int32_t members are u32"
 
 [[file]]
 c = "sys/dev/ic/lancereg.h"
 rust = "sys/dev/ic/lancereg.rs"
-status = "todo"
-notes = "M16: LANCE registers for pcn(4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "1819aac78f1a17f19472ce07cdea17746583e0c5"
+notes = "M16c: CSR/BCR numbers and bits, init block mode, chip ids; function-like macros are const fns; LE_*ADDR(sc) macros (lance softc members) not ported"
 
 [[file]]
 c = "sys/dev/pci/if_pcn.c"
 rust = "sys/dev/pci/if_pcn.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "3d93a269ba97b398505e353329db00db6cf0e937"
 deps = ["sys/dev/ic/am79900reg.h", "sys/dev/ic/lancereg.h"]
-notes = "M16: pcn(4); criterion: QEMU's pcnet pings 10.0.2.2; amd64 GENERIC only"
+notes = "M16c: pcn(4), amd64 GENERIC only (pcn* at pci?); not MPSAFE (kernel lock, as C); address from the PROM (PCN_NO_PROM off); pcn_set_filter hash split out as pcn_hash_multi for host tests; smoke-pcn pings 10.0.2.2 on QEMU pcnet (Am79c970A, no PHY); PCI vendor/product names are not printed (the tree has no pcidevs name table), as em/re"
 
 [[file]]
 c = "sys/dev/ic/fxpreg.h"

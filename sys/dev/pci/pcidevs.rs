@@ -1689,6 +1689,17 @@ pub const PCI_PRODUCT_TTTECH_MC322: u32 = 0x000a;
 /// `PCI_PRODUCT_USR2_USR997902`: USR997902.
 pub const PCI_PRODUCT_USR2_USR997902: u32 = 0x0116;
 
+// pcn(4) (M16c): if_pcn.c's pcn_devices[] and its IBM (Trident 4DWAVE DX) test.
+
+/// `PCI_VENDOR_TRIDENT`: Trident.
+pub const PCI_VENDOR_TRIDENT: u32 = 0x1023;
+/// `PCI_PRODUCT_AMD_PCNET_PCI`: 79c970 PCnet-PCI.
+pub const PCI_PRODUCT_AMD_PCNET_PCI: u32 = 0x2000;
+/// `PCI_PRODUCT_AMD_PCHOME_PCI`: 79c978 PChome-PCI.
+pub const PCI_PRODUCT_AMD_PCHOME_PCI: u32 = 0x2001;
+/// `PCI_PRODUCT_TRIDENT_4DWAVE_DX`: 4DWAVE DX.
+pub const PCI_PRODUCT_TRIDENT_4DWAVE_DX: u32 = 0x2000;
+
 // vmx(4) (M13): if_vmx.c's vmx_devices[].
 
 /// `PCI_VENDOR_VMWARE`: VMware.
