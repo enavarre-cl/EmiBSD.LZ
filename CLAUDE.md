@@ -121,6 +121,8 @@ Details: `.claude/rules/porting-workflow.md` and `docs/PORTING.md`.
 - `docs/C_TO_RUST.md`: C idiom → Rust idiom decisions.
 - `docs/ROADMAP.md`: milestones M0..M7 with mechanical exit criteria.
 - `docs/SETUP.md`: toolchain, QEMU and Limine on macOS.
+- `docs/EXTERNAL_BUGS.md`: bugs of OpenBSD's C, QEMU, EDK2 and the host tools met on the way, for
+  the user to report upstream.
 - `docs/STATUS.md` and `reference/PINNED.md` are imported below, so they are always in context.
 
 @docs/STATUS.md
