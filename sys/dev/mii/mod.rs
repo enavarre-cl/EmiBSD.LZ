@@ -21,8 +21,12 @@
 //!
 //! The mii(4) layer (`mii.c`, `mii_physubr.c`, `<dev/mii/mii.h>`, `<dev/mii/miivar.h>`), the
 //! PHY drivers the GENERICs attach at `mii?` that are ported (`rlphy`, `rgephy`, `ukphy` with
-//! `ukphy_subr`), the ids they match (`miidevs.h`) and `rgephyreg`.
+//! `ukphy_subr`, `lxtphy`, `dcphy`), the ids they match (`miidevs.h`), `rgephyreg` and
+//! `lxtphyreg`.
 
+pub mod dcphy;
+pub mod lxtphy;
+pub mod lxtphyreg;
 #[allow(clippy::module_inception)] // OpenBSD's layout: sys/dev/mii/mii.c
 pub mod mii;
 pub mod mii_physubr;
