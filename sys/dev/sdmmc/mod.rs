@@ -17,21 +17,25 @@
 /* </LICENSES> */
 
 /* <CODE> */
-//! ATA and SATA support: OpenBSD `sys/dev/ata/`. `atascsi` is the SCSI to ATA translation
-//! layer of the SATA host controllers (`ahci(4)`), `pmreg` the port multiplier registers;
-//! `wd` is wd(4), the ATA disk of a wdc(4) channel, with `ata` (IDENTIFY, SET FEATURES) and
-//! `ata_wdc` (its transfers through the channel); `atareg`, `atavar`, `satareg` and `wdvar`
-//! are the IDENTIFY block, the drive data and commands, the SATA registers and wd(4)'s
-//! softc (M16a).
+//! SD/MMC support: OpenBSD `sys/dev/sdmmc/` (M16a). `sdmmc` is the sdmmc(4) bus of a card
+//! slot, with `sdmmc_mem` (memory cards), `sdmmc_io` and `sdmmc_cis` (SDIO functions) and
+//! `sdmmc_scsi` (the SCSI emulation sd(4) attaches through); `sdhc` is sdhc(4), the SD Host
+//! Controller Standard chip driver its attachments (`dev/pci/sdhc_pci`) call;
+//! `sdmmcchip`, `sdmmcreg`, `sdmmcvar`, `sdmmc_ioreg`, `sdmmcdevs`, `sdhcreg` and `sdhcvar`
+//! are their headers.
 
-#[allow(clippy::module_inception)] // OpenBSD's layout: sys/dev/ata/ata.c
-pub mod ata;
-pub mod ata_wdc;
-pub mod atareg;
-pub mod atascsi;
-pub mod atavar;
-pub mod pmreg;
-pub mod satareg;
-pub mod wd;
-pub mod wdvar;
+pub mod sdhc;
+pub mod sdhcreg;
+pub mod sdhcvar;
+#[allow(clippy::module_inception)] // OpenBSD's layout: sys/dev/sdmmc/sdmmc.c
+pub mod sdmmc;
+pub mod sdmmc_cis;
+pub mod sdmmc_io;
+pub mod sdmmc_ioreg;
+pub mod sdmmc_mem;
+pub mod sdmmc_scsi;
+pub mod sdmmcchip;
+pub mod sdmmcdevs;
+pub mod sdmmcreg;
+pub mod sdmmcvar;
 /* </CODE> */

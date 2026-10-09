@@ -68,7 +68,8 @@
 //! - Partial: only the IDs some ported file names are present (`pci.c`'s `pci_set_powerstate`,
 //!   `pci_quirks.c`, `virtio_pci.c`, `nvme_pci.c`, `ahci_pci.c`, `xhci_pci.c`, `auich.c`,
 //!   `azalia.c`, `azalia_codec.c`, `siop_pci_common.c`, `if_em.c`, `if_re_pci.c`,
-//!   `if_vmx.c`, `if_dc_pci.c`, `vga_pci.c`, `ppb.c`, `ehci_pci.c` and arm64's `acpipci.c`). The whole header, and `pcidevs_data.h` for
+//!   `if_vmx.c`, `if_dc_pci.c`, `vga_pci.c`, `ppb.c`, `ehci_pci.c`, `sdhc_pci.c` and arm64's
+//!   `acpipci.c`). The whole header, and `pcidevs_data.h` for
 //!   `PCIVERBOSE`, wait for a generator in `tools/xtask` in the manner of `gen-syscalls`
 //!   (`docs/ARCHITECTURE.md`).
 //! - The IDs are `u32`, the type `pci_vendor`/`pci_product` return.
@@ -608,6 +609,51 @@ pub const PCI_PRODUCT_SYMBIOS_1010: u32 = 0x0020;
 pub const PCI_PRODUCT_SYMBIOS_1010_2: u32 = 0x0021;
 /// `PCI_PRODUCT_SYMBIOS_875J`: 53c875J.
 pub const PCI_PRODUCT_SYMBIOS_875J: u32 = 0x008f;
+
+/// `PCI_PRODUCT_SYMBIOS_1030`: 53c1030.
+pub const PCI_PRODUCT_SYMBIOS_1030: u32 = 0x0030;
+/// `PCI_PRODUCT_SYMBIOS_SAS1064`: SAS1064.
+pub const PCI_PRODUCT_SYMBIOS_SAS1064: u32 = 0x0050;
+/// `PCI_PRODUCT_SYMBIOS_SAS1068`: SAS1068.
+pub const PCI_PRODUCT_SYMBIOS_SAS1068: u32 = 0x0054;
+/// `PCI_PRODUCT_SYMBIOS_SAS1068_2`: SAS1068.
+pub const PCI_PRODUCT_SYMBIOS_SAS1068_2: u32 = 0x0055;
+/// `PCI_PRODUCT_SYMBIOS_SAS1064E`: SAS1064E.
+pub const PCI_PRODUCT_SYMBIOS_SAS1064E: u32 = 0x0056;
+/// `PCI_PRODUCT_SYMBIOS_SAS1064E_2`: SAS1064E.
+pub const PCI_PRODUCT_SYMBIOS_SAS1064E_2: u32 = 0x0057;
+/// `PCI_PRODUCT_SYMBIOS_SAS1068E`: SAS1068E.
+pub const PCI_PRODUCT_SYMBIOS_SAS1068E: u32 = 0x0058;
+/// `PCI_PRODUCT_SYMBIOS_SAS1068E_2`: SAS1068E.
+pub const PCI_PRODUCT_SYMBIOS_SAS1068E_2: u32 = 0x0059;
+/// `PCI_PRODUCT_SYMBIOS_SAS1066E`: SAS1066E.
+pub const PCI_PRODUCT_SYMBIOS_SAS1066E: u32 = 0x005a;
+/// `PCI_PRODUCT_SYMBIOS_SAS1064A`: SAS1064A.
+pub const PCI_PRODUCT_SYMBIOS_SAS1064A: u32 = 0x005c;
+/// `PCI_PRODUCT_SYMBIOS_SAS1066`: SAS1066.
+pub const PCI_PRODUCT_SYMBIOS_SAS1066: u32 = 0x005e;
+/// `PCI_PRODUCT_SYMBIOS_FC909`: FC909.
+pub const PCI_PRODUCT_SYMBIOS_FC909: u32 = 0x0620;
+/// `PCI_PRODUCT_SYMBIOS_FC909A`: FC909A.
+pub const PCI_PRODUCT_SYMBIOS_FC909A: u32 = 0x0621;
+/// `PCI_PRODUCT_SYMBIOS_FC929`: FC929.
+pub const PCI_PRODUCT_SYMBIOS_FC929: u32 = 0x0622;
+/// `PCI_PRODUCT_SYMBIOS_FC929_1`: FC929.
+pub const PCI_PRODUCT_SYMBIOS_FC929_1: u32 = 0x0623;
+/// `PCI_PRODUCT_SYMBIOS_FC919`: FC919.
+pub const PCI_PRODUCT_SYMBIOS_FC919: u32 = 0x0624;
+/// `PCI_PRODUCT_SYMBIOS_FC919_1`: FC919.
+pub const PCI_PRODUCT_SYMBIOS_FC919_1: u32 = 0x0625;
+/// `PCI_PRODUCT_SYMBIOS_FC929X`: FC929X.
+pub const PCI_PRODUCT_SYMBIOS_FC929X: u32 = 0x0626;
+/// `PCI_PRODUCT_SYMBIOS_FC919X`: FC919X.
+pub const PCI_PRODUCT_SYMBIOS_FC919X: u32 = 0x0628;
+/// `PCI_PRODUCT_SYMBIOS_FC949X`: FC949X.
+pub const PCI_PRODUCT_SYMBIOS_FC949X: u32 = 0x0640;
+/// `PCI_PRODUCT_SYMBIOS_FC939X`: FC939X.
+pub const PCI_PRODUCT_SYMBIOS_FC939X: u32 = 0x0642;
+/// `PCI_PRODUCT_SYMBIOS_FC949E`: FC949E.
+pub const PCI_PRODUCT_SYMBIOS_FC949E: u32 = 0x0646;
 
 /// `PCI_VENDOR_IBM`: IBM.
 pub const PCI_VENDOR_IBM: u32 = 0x1014;
@@ -1833,6 +1879,8 @@ pub const PCI_PRODUCT_INTEL_82801GB_LAN_2: u32 = 0x1069;
 pub const PCI_VENDOR_VMWARE: u32 = 0x15ad;
 /// `PCI_PRODUCT_VMWARE_NET_3`: VMXNET3.
 pub const PCI_PRODUCT_VMWARE_NET_3: u32 = 0x07b0;
+/// `PCI_PRODUCT_VMWARE_PVSCSI`: PVSCSI.
+pub const PCI_PRODUCT_VMWARE_PVSCSI: u32 = 0x07c0;
 /// `PCI_PRODUCT_INTEL_US15W_IGD`: US15W Video.
 pub const PCI_PRODUCT_INTEL_US15W_IGD: u32 = 0x8108;
 /// `PCI_PRODUCT_INTEL_US15L_IGD`: US15L/UL11L Video.
@@ -1952,6 +2000,29 @@ pub const PCI_PRODUCT_LINKSYS_PCM200: u32 = 0xab09;
 pub const PCI_VENDOR_HAWKING: u32 = 0x17b3;
 /// `PCI_PRODUCT_HAWKING_PN672TX`: PN672TX.
 pub const PCI_PRODUCT_HAWKING_PN672TX: u32 = 0xab08;
+// M16a (sdhc_pci.c): the SD host controllers it names.
+/// `PCI_PRODUCT_REALTEK_RTS5209`: RTS5209 Card Reader.
+pub const PCI_PRODUCT_REALTEK_RTS5209: u32 = 0x5209;
+/// `PCI_VENDOR_RICOH`: Ricoh.
+pub const PCI_VENDOR_RICOH: u32 = 0x1180;
+/// `PCI_PRODUCT_RICOH_R5U822`: 5U822 SD/MMC.
+pub const PCI_PRODUCT_RICOH_R5U822: u32 = 0xe822;
+/// `PCI_PRODUCT_RICOH_R5U823`: 5U823 SD/MMC.
+pub const PCI_PRODUCT_RICOH_R5U823: u32 = 0xe823;
+/// `PCI_VENDOR_TI`: TI.
+pub const PCI_VENDOR_TI: u32 = 0x104c;
+/// `PCI_PRODUCT_TI_PCI7XX1_FLASH`: PCI7XX1 Flash.
+pub const PCI_PRODUCT_TI_PCI7XX1_FLASH: u32 = 0x8033;
+/// `PCI_PRODUCT_TI_PCI7XX1_SD`: PCI7XX1 SD.
+pub const PCI_PRODUCT_TI_PCI7XX1_SD: u32 = 0x8034;
+/// `PCI_VENDOR_ENE`: ENE.
+pub const PCI_VENDOR_ENE: u32 = 0x1524;
+/// `PCI_PRODUCT_ENE_SDCARD`: SD.
+pub const PCI_PRODUCT_ENE_SDCARD: u32 = 0x0550;
+/// `PCI_VENDOR_GENESYS`: Genesys Logic.
+pub const PCI_VENDOR_GENESYS: u32 = 0x17a0;
+/// `PCI_PRODUCT_GENESYS_GL9755`: GL9755.
+pub const PCI_PRODUCT_GENESYS_GL9755: u32 = 0x9755;
 /* </CODE> */
 
 /* <TESTS> */
@@ -3784,6 +3855,7 @@ mod tests {
             ("PCI_PRODUCT_USR2_USR997902", PCI_PRODUCT_USR2_USR997902),
             ("PCI_VENDOR_VMWARE", PCI_VENDOR_VMWARE),
             ("PCI_PRODUCT_VMWARE_NET_3", PCI_PRODUCT_VMWARE_NET_3),
+            ("PCI_PRODUCT_VMWARE_PVSCSI", PCI_PRODUCT_VMWARE_PVSCSI),
             ("PCI_PRODUCT_INTEL_US15W_IGD", PCI_PRODUCT_INTEL_US15W_IGD),
             ("PCI_PRODUCT_INTEL_US15L_IGD", PCI_PRODUCT_INTEL_US15L_IGD),
             ("PCI_PRODUCT_INTEL_GMA600_0", PCI_PRODUCT_INTEL_GMA600_0),
@@ -3857,6 +3929,76 @@ mod tests {
             ("PCI_PRODUCT_LINKSYS_PCM200", PCI_PRODUCT_LINKSYS_PCM200),
             ("PCI_VENDOR_HAWKING", PCI_VENDOR_HAWKING),
             ("PCI_PRODUCT_HAWKING_PN672TX", PCI_PRODUCT_HAWKING_PN672TX),
+        ] {
+            assert_eq!(
+                crate::reftest::int(&defs, name),
+                Some(i64::from(value)),
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "needs OPENBSD_SRC (just test-ref)"]
+    fn mpi_ids_match_the_generated_header() {
+        let defs = crate::reftest::defines("sys/dev/pci/pcidevs.h");
+        for (name, value) in [
+            ("PCI_PRODUCT_SYMBIOS_1030", PCI_PRODUCT_SYMBIOS_1030),
+            ("PCI_PRODUCT_SYMBIOS_SAS1064", PCI_PRODUCT_SYMBIOS_SAS1064),
+            ("PCI_PRODUCT_SYMBIOS_SAS1068", PCI_PRODUCT_SYMBIOS_SAS1068),
+            (
+                "PCI_PRODUCT_SYMBIOS_SAS1068_2",
+                PCI_PRODUCT_SYMBIOS_SAS1068_2,
+            ),
+            ("PCI_PRODUCT_SYMBIOS_SAS1064E", PCI_PRODUCT_SYMBIOS_SAS1064E),
+            (
+                "PCI_PRODUCT_SYMBIOS_SAS1064E_2",
+                PCI_PRODUCT_SYMBIOS_SAS1064E_2,
+            ),
+            ("PCI_PRODUCT_SYMBIOS_SAS1068E", PCI_PRODUCT_SYMBIOS_SAS1068E),
+            (
+                "PCI_PRODUCT_SYMBIOS_SAS1068E_2",
+                PCI_PRODUCT_SYMBIOS_SAS1068E_2,
+            ),
+            ("PCI_PRODUCT_SYMBIOS_SAS1066E", PCI_PRODUCT_SYMBIOS_SAS1066E),
+            ("PCI_PRODUCT_SYMBIOS_SAS1064A", PCI_PRODUCT_SYMBIOS_SAS1064A),
+            ("PCI_PRODUCT_SYMBIOS_SAS1066", PCI_PRODUCT_SYMBIOS_SAS1066),
+            ("PCI_PRODUCT_SYMBIOS_FC909", PCI_PRODUCT_SYMBIOS_FC909),
+            ("PCI_PRODUCT_SYMBIOS_FC909A", PCI_PRODUCT_SYMBIOS_FC909A),
+            ("PCI_PRODUCT_SYMBIOS_FC929", PCI_PRODUCT_SYMBIOS_FC929),
+            ("PCI_PRODUCT_SYMBIOS_FC929_1", PCI_PRODUCT_SYMBIOS_FC929_1),
+            ("PCI_PRODUCT_SYMBIOS_FC919", PCI_PRODUCT_SYMBIOS_FC919),
+            ("PCI_PRODUCT_SYMBIOS_FC919_1", PCI_PRODUCT_SYMBIOS_FC919_1),
+            ("PCI_PRODUCT_SYMBIOS_FC929X", PCI_PRODUCT_SYMBIOS_FC929X),
+            ("PCI_PRODUCT_SYMBIOS_FC919X", PCI_PRODUCT_SYMBIOS_FC919X),
+            ("PCI_PRODUCT_SYMBIOS_FC949X", PCI_PRODUCT_SYMBIOS_FC949X),
+            ("PCI_PRODUCT_SYMBIOS_FC939X", PCI_PRODUCT_SYMBIOS_FC939X),
+            ("PCI_PRODUCT_SYMBIOS_FC949E", PCI_PRODUCT_SYMBIOS_FC949E),
+        ] {
+            assert_eq!(
+                crate::reftest::int(&defs, name),
+                Some(i64::from(value)),
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "needs OPENBSD_SRC (just test-ref)"]
+    fn sdhc_pci_ids_match_the_generated_header() {
+        let defs = crate::reftest::defines("sys/dev/pci/pcidevs.h");
+        for (name, value) in [
+            ("PCI_PRODUCT_REALTEK_RTS5209", PCI_PRODUCT_REALTEK_RTS5209),
+            ("PCI_VENDOR_RICOH", PCI_VENDOR_RICOH),
+            ("PCI_PRODUCT_RICOH_R5U822", PCI_PRODUCT_RICOH_R5U822),
+            ("PCI_PRODUCT_RICOH_R5U823", PCI_PRODUCT_RICOH_R5U823),
+            ("PCI_VENDOR_TI", PCI_VENDOR_TI),
+            ("PCI_PRODUCT_TI_PCI7XX1_FLASH", PCI_PRODUCT_TI_PCI7XX1_FLASH),
+            ("PCI_PRODUCT_TI_PCI7XX1_SD", PCI_PRODUCT_TI_PCI7XX1_SD),
+            ("PCI_VENDOR_ENE", PCI_VENDOR_ENE),
+            ("PCI_PRODUCT_ENE_SDCARD", PCI_PRODUCT_ENE_SDCARD),
+            ("PCI_VENDOR_GENESYS", PCI_VENDOR_GENESYS),
+            ("PCI_PRODUCT_GENESYS_GL9755", PCI_PRODUCT_GENESYS_GL9755),
         ] {
             assert_eq!(
                 crate::reftest::int(&defs, name),
