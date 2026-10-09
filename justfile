@@ -120,7 +120,7 @@ smokes := "smoke-boot smoke-shell smoke-login smoke-net smoke-route smoke-diag s
     "smoke-nvme smoke-ahci smoke-smmu smoke-power smoke-siop smoke-em smoke-igb smoke-re smoke-vmx smoke-pcn smoke-ne smoke-fxp smoke-dc smoke-efiboot smoke-acpi smoke-gicv3 smoke-clock smoke-rtc " + \
     "smoke-nfs smoke-ext2fs smoke-fuse smoke-ntfs smoke-tcpbench smoke-mp smoke-ddbmp " + \
     "smoke-net-mp smoke-up smoke-audio smoke-usb smoke-puc smoke-fb smoke-wscons smoke-vga smoke-kbd " + \
-    "smoke-powerbtn smoke-ukc smoke-ppb smoke-dmar smoke-iic smoke-ipmi smoke-tpm " + \
+    "smoke-powerbtn smoke-ukc smoke-ppb smoke-dmar smoke-iic smoke-ipmi smoke-tpm smoke-virtio smoke-viogpu " + \
     "smoke-mouse smoke-ugen smoke-ehci smoke-uaudio smoke-uhci smoke-ohci smoke-cdce smoke-ucom " + \
     "smoke-pckbc smoke-eap smoke-lpt"
 
@@ -2853,6 +2853,61 @@ smoke-tpm: (build-amd64 "--features qemu,multiprocessor") build-init-amd64
     cargo xtask smoke {{reject}} {{smp}} --arch amd64 --kernel target/{{amd64}}/debug/bsd --tpm crb {{tpm_check}} \
         --expect 'tpm0 at acpi0 TPM_ 2.0 (CRB) addr 0xfed40000/0x1000, device 0x00000000 rev 0x0'
 
+# M16d: viornd(4) and viomb(4), both archs: QEMU's virtio entropy device and memory balloon
+# (`--virtio-rng --balloon`, hwopts.rs; virtio-*-pci on amd64, virtio-mmio on arm64, found
+# there before the disks, so the virtioN numbers differ per arch). viornd asks for 16 bytes one
+# tick after its attach and gets one interrupt (as OpenBSD 8.0: `irq69/viornd0:1 1` on amd64;
+# the next request is 15 << 5 s away); its words reach enqueue_randomness, still rnd.c's M3
+# placeholder (dev/rnd.rs). The balloon is driven from QEMU's monitor (`--monitor-after`):
+# `balloon 384` of the smokes' 512 MB, then `balloon 512`; ten seconds after each,
+# hw.sensors.viomb0 shows what OpenBSD 8.0 shows on the same machine (the C's sensors lag the
+# last 1 MB request: 128 MB desired, 127 MB current; then 0 and 1 MB), and `vmstat -s`'s
+# pages free drop by at least the 32768 pages the balloon took and come back. Part of `smoke`.
+virtio_check := "--virtio-rng --balloon --expect-ramdisk --until-seen " + disk_login + " " + \
+    "--send-after '# ' --send 'pf() { vmstat -s | while read n a b; do [ $a$b = pagesfree ] && echo $n; done; }; " + \
+    "f0=$(pf); echo m16d-inflate-$((40+1))\\n' " + \
+    "--monitor-after 'm16d-inflate-41' --monitor 'balloon 384' " + \
+    "--send-after 'm16d-inflate-41' --send 'sleep 10; f1=$(pf); " + \
+    "echo inflated: $(sysctl -n hw.sensors.viomb0.raw0) / $(sysctl -n hw.sensors.viomb0.raw1); " + \
+    "[ $((f0-f1)) -ge 32768 ] && echo m16d-took-$((32000+768)); echo m16d-deflate-$((40+2))\\n' " + \
+    "--monitor-after 'm16d-deflate-42' --monitor 'balloon 512' " + \
+    "--send-after 'm16d-deflate-42' --send 'sleep 10; f2=$(pf); " + \
+    "echo deflated: $(sysctl -n hw.sensors.viomb0.raw0) / $(sysctl -n hw.sensors.viomb0.raw1); " + \
+    "[ $((f2-f1)) -ge 32512 ] && echo m16d-gave-$((32000+512)); " + \
+    "vmstat -i | while read n t r; do echo intr $n $t; done; echo m16d-done-$((40+3))\\n' " + \
+    "--expect 'inflated: 134217728 (desired) / 133169152 (current)' --expect 'm16d-took-32768' " + \
+    "--expect 'deflated: 0 (desired) / 1048576 (current)' --expect 'm16d-gave-32512' --expect 'm16d-done-43'"
+
+smoke-virtio: (build-amd64 "--features qemu,multiprocessor") (build-arm64 "--features qemu,multiprocessor")
+    @test -f target/userland/amd64/ramdisk.ffs -a -f target/userland/arm64/ramdisk.ffs || \
+        { echo "smoke-virtio: no ramdisk image; run just userland first"; exit 1; }
+    cargo xtask smoke {{reject}} {{smp}} --arch amd64 --kernel target/{{amd64}}/debug/bsd {{virtio_check}} \
+        --expect 'viornd0 at virtio2' --expect 'virtio2: msix per-VQ' \
+        --expect 'viomb0 at virtio3' --expect 'virtio3: msix shared' --expect 'intr irq69/viornd0:1 1'
+    cargo xtask smoke {{reject}} {{smp}} --arch arm64 --kernel target/{{arm64}}/debug/bsd {{virtio_check}} \
+        --expect 'virtio27 at mainbus0: Virtio Memory Balloon Device' --expect 'viomb0 at virtio27' \
+        --expect 'virtio28 at mainbus0: Virtio Entropy Device' --expect 'viornd0 at virtio28' \
+        --expect 'intr irq76/virtio28 1'
+
+# M16d: viogpu(4), arm64 only (amd64's GENERIC has it commented out). QEMU's virtio-gpu-pci
+# (`--virtio-gpu`; the virtio-mmio GPU is legacy, which viogpu refuses as OpenBSD 8.0 does) is
+# the only display: `--screenshot-after` adds no ramfb with it, so there is no simplefb, as on
+# OpenBSD 8.0. viogpu takes the console as the C does (`wsdisplay_cnattach`), so the kernel's
+# later messages go to the screen and the shell reads them from dmesg(8); the login stays on
+# the serial line (/dev/console is still pluart0's). The shell clears screen 0 of
+# /dev/ttyC0 and writes a line at its top, as the OpenBSD 8.0 probe did; `--screen-text` finds
+# it in QEMU's screendump of the GPU's scanout. Part of `smoke`.
+viogpu_line := 'dmesg | grep -e viogpu -e wsdisplay0 -e selftest..wscons; x=wrote; print "\033[2J\033[HVIOGPU-TEXT-42" > /dev/ttyC0 && echo viogpu-$x\n'
+smoke-viogpu: (build-arm64 "--features qemu,multiprocessor")
+    @test -f target/userland/arm64/ramdisk.ffs || \
+        { echo "smoke-viogpu: no ramdisk image; run just userland first"; exit 1; }
+    cargo xtask smoke {{reject}} {{smp}} --arch arm64 --kernel target/{{arm64}}/debug/bsd --virtio-gpu --cmdline "selftest=wscons" \
+        --screenshot-after 'viogpu-wrote' --screen-text '0:0:VIOGPU-TEXT-42' --until-seen --expect 'rc: multi-user' \
+        {{disk_login}} --send-after "# " --send '{{viogpu_line}}' \
+        --expect ': 1280x800, 32bpp' --expect 'wsdisplay0 at viogpu0 mux 1: console (std, vt100 emulation)' \
+        --expect 'wsdisplay0: screen 1-5 added (std, vt100 emulation)' --expect 'viogpu-wrote' \
+        --expect 'viogpu0 at virtio32virtio32: msix per-VQ' --expect 'selftest: wscons grid x=0 y=0 cw=12 ch=24 cols=106 rows=33 on viogpu0'
+
 # annotate a stack trace (paste it on stdin) with the debug kernel's symbols
 symbolize arch:
     cargo xtask symbolize --arch {{arch}}
@@ -2949,12 +3004,14 @@ test-ref:
     OPENBSD_SRC={{justfile_directory()}}/reference/openbsd-src cargo test -p libkern -p libz -p bsd -- --ignored
     OPENBSD_SRC={{justfile_directory()}}/reference/openbsd-src cargo test -p efiboot-arm64 -- --ignored
 
-# bare targets with `--features qemu`: a superset of the plain build, which `just build` covers
+# bare targets with `--features qemu`: a superset of the plain build, which `just build` covers;
+# amd64 also with `viocon` (M16d), whose ioconf and cdevsw entries only that feature compiles
 clippy:
     cargo clippy -p bsd --target {{amd64}} --features qemu -- -D warnings
     cargo clippy -p bsd --target {{arm64}} --features qemu -- -D warnings
     cargo clippy -p bsd --target {{amd64}} --features qemu,multiprocessor -- -D warnings
     cargo clippy -p bsd --target {{arm64}} --features qemu,multiprocessor -- -D warnings
+    cargo clippy -p bsd --target {{amd64}} --features qemu,multiprocessor,viocon -- -D warnings
     cargo clippy -p init --target {{amd64}} -- -D warnings
     cargo clippy -p init --target {{arm64}} -- -D warnings
     cargo clippy -p libkern -p libz -p bsd -p xtask -- -D warnings
