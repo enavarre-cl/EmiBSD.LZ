@@ -31,5 +31,8 @@ Applies to every port of a C file from `reference/openbsd-src/sys/` into `sys/`.
 - Mark the entry `wip` when starting; `ported` only when `just ci` is green. Fill
   `upstream_commit` (= `[meta].pinned`) and `upstream_blob`
   (`git -C reference/openbsd-src rev-parse HEAD:<c path>`).
+- A slip in the C that the port fixes or bounds (an out-of-bounds access, a division by zero, a
+  NULL dereference, a wrong size) is a deviation and also an entry of `docs/EXTERNAL_BUGS.md`
+  (`path:line` at the pin, what goes wrong, how sure), so the user can report it to OpenBSD.
 - One commit per file or coherent cluster (`git-commits.md`). Never mix a port with a refactor.
 - Before ending a session, update `docs/STATUS.md` (milestone, done, next, blockers).
