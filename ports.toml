@@ -11668,28 +11668,36 @@ notes = "M16c: license: BSD-4 (Bill Paul), kept whole; the whole file: dcphy_ca/
 [[file]]
 c = "sys/dev/ic/lptreg.h"
 rust = "sys/dev/ic/lptreg.rs"
-status = "todo"
-notes = "M16: parallel port registers"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "107f740d7e84c115a3fc1ea215e8b2bd3227c0f6"
+notes = "M16d: every define (the register offsets keep their lower-case C names); both notices kept (the second is William Jolitz's 1990 copyright line); reference-backed test"
 
 [[file]]
 c = "sys/dev/ic/lptvar.h"
 rust = "sys/dev/ic/lptvar.rs"
-status = "todo"
-notes = "M16: lpt_softc"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "fa04f4f44f23e492ba6c02db456f5e79ebb1cea7"
+notes = "M16d: struct lpt_softc (Cells, valid as zero) and the LPT_* state and flag bits; the functions it declares live in lpt.rs; reference-backed test"
 
 [[file]]
 c = "sys/dev/ic/lpt.c"
 rust = "sys/dev/ic/lpt.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "cf1f332202774bf3bbdd32f463ba8a9a6e37d226"
 deps = ["sys/dev/ic/lptreg.h", "sys/dev/ic/lptvar.h"]
-notes = "M16: lpt(4); criterion: bytes written to /dev/lpt0 reach QEMU's isa-parallel chardev file; amd64 GENERIC only"
+notes = "M16d: the whole file: lpt_port_test (bool), lpt_attach_common, lptopen (prime, wait for ready, the C's return of tsleep's 0 kept), lpt_not_ready (log), lptwakeup, lptclose, lptpushbytes (polled with the adaptive spin, or interrupt-driven), lptwrite, lptintr, lpt_activate; lptclose/lptwrite return ENXIO for a unit with no device where the C dereferences cd_devs; LPRINTF (DEBUG && notdef) not carried; cdevsw 16 with NLPT 1 on amd64, 0 on arm64; smoke-lpt: bytes reach QEMU's parallel chardev"
 
 [[file]]
 c = "sys/dev/isa/lpt_isa.c"
 rust = "sys/dev/isa/lpt_isa.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "551540dec0f109cbf3a10f7db941255a7f73b709"
 deps = ["sys/dev/ic/lpt.c", "sys/dev/isa/isa.c"]
-notes = "M16: lpt at isa"
+notes = "M16d: lpt_isa_probe (data port walking tests, isa_intr_check through the parent isa_softc's chipset tag, polled when the IRQ is refused), lpt_isa_attach; lpt0 at isa? port 0x378 irq 7 in amd64's ioconf (lpt1, lpt2 are commented out in GENERIC; lpt* at puc? waits for lpt_puc.c)"
 
 [[file]]
 c = "sys/dev/isa/isadmavar.h"
