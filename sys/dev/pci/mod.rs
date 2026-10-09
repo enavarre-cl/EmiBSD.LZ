@@ -33,13 +33,18 @@
 //! `piixreg`) the ICH and PIIX4 SMBus controllers (`ichiic* at pci?`, `piixpm* at pci?`, M16e); `ehci_pci` the EHCI front-end
 //! (`ehci* at pci?`, M16b); `uhci_pci` the UHCI front-end (`uhci* at pci?`, M16b);
 //! `ohci_pci` the OHCI front-end (`ohci* at pci?`, M16b); `vmwpvs` VMware's paravirtual SCSI
-//! adapter (`vmwpvs* at pci?`, M16a). The machine side
+//! adapter (`vmwpvs* at pci?`, M16a); `pciide` the PCI IDE controllers (`pciide* at pci?`,
+//! M16a), with `pciidereg`, `pciidevar`, the chip headers `pciide_*_reg` and the Cypress
+//! 82C693 glue (`cy82c693`, `cy82c693reg`, `cy82c693var`). The machine side
 //! (configuration access, tags, interrupts) is `machine::pci_machdep`.
 
 pub mod ahci_pci;
 pub mod auich;
 pub mod azalia;
 pub mod azalia_codec;
+pub mod cy82c693;
+pub mod cy82c693reg;
+pub mod cy82c693var;
 pub mod ehci_pci;
 pub mod gcu_reg;
 pub mod gcu_var;
@@ -65,6 +70,22 @@ pub mod pci_map;
 pub mod pci_quirks;
 pub mod pci_subr;
 pub mod pcidevs;
+pub mod pciide_acard_reg;
+pub mod pciide_acer_reg;
+pub mod pciide_amd_reg;
+pub mod pciide_apollo_reg;
+pub mod pciide_cmd_reg;
+pub mod pciide_cy693_reg;
+pub mod pciide_hpt_reg;
+pub mod pciide_ite_reg;
+pub mod pciide_ixp_reg;
+pub mod pciide_jmicron_reg;
+pub mod pciide_natsemi_reg;
+pub mod pciide_nforce_reg;
+pub mod pciide_piix_reg;
+pub mod pciide_rdc_reg;
+pub mod pciide_sis_reg;
+pub mod pciidereg;
 pub mod pcireg;
 pub mod pcivar;
 pub mod piixpm;
