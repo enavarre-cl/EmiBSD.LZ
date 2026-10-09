@@ -10486,9 +10486,11 @@ notes = "M16a: the whole header: struct ata_bio (AtaBio: Cells; lp the in-core l
 [[file]]
 c = "sys/dev/ata/ata.c"
 rust = "sys/dev/ata/ata.rs"
-status = "todo"
-deps = ["sys/dev/ata/atavar.h", "sys/dev/ata/atareg.h"]
-notes = "M16: ata_get_params and ata_set_mode for wd(4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "1cf2a24aa21b2c4c830e46fa793b43027343242b"
+deps = ["sys/dev/ata/atavar.h", "sys/dev/ata/atareg.h", "sys/dev/ic/wdcreg.h"]
+notes = "M16a: the whole file: ata_get_params (IDENTIFY into a DmaBuf, dma_alloc not ported; the big-endian swaps under target_endian big; the string fixing in ata_params_fixup), ata_set_mode, ata_dmaerr, ata_perror (snprintf into a byte buffer). ata_get_params/ata_set_mode panic when flags hold neither AT_WAIT nor AT_POLL (exec_on_stack), where the C would leave the transfer pointing into a dead frame; every caller passes one. Host tests (string swaps, error texts, DMA error accounting)"
 
 [[file]]
 c = "sys/dev/ic/wdcreg.h"
@@ -10520,9 +10522,11 @@ notes = "M16a: license: Sapuntzakis BSD-3, kept whole; enum wdcevent_type (Wdcev
 [[file]]
 c = "sys/dev/ic/wdc.c"
 rust = "sys/dev/ic/wdc.rs"
-status = "todo"
-deps = ["sys/dev/ic/wdcreg.h", "sys/dev/ic/wdcvar.h", "sys/dev/ata/atavar.h"]
-notes = "M16: the IDE channel core (probe, reset, PIO/DMA xfer queue) under pciide"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "32ec659e4bd4b177896c8988801dfe4633a9afe0"
+deps = ["sys/dev/ic/wdcreg.h", "sys/dev/ic/wdcvar.h", "sys/dev/ic/wdcevent.h", "sys/dev/ata/atavar.h", "sys/dev/ata/atareg.h"]
+notes = "M16a: the whole file: wdc_cd, wdc_default_vtbl and the default register functions (an odd byte count's last word through a bounce, where the C touches the byte past the buffer), wdprint, wdc_disable/enable_intr, wdc_set_drive, wdc_floating_bus/wdc_preata_drive/wdc_ata_present (bool), wdcprobe, wdc_alloc_queue (the xfer pool and wdc_xfer_iopool on first use) / wdc_free_queue (unsafe), wdcattach (&'static channel), wdcstart, wdcdetach, wdcintr, wdc_reset_channel, wdcreset (bool), wdc_do_reset, __wdcwait_reset, wdc_wait_for_status (Err(ETIMEDOUT) for -1), wdc_dmawait (Err(ENXIO)/Err(ETIMEDOUT)), wdctimeout, wdc_probe_caps, wdc_output/input_bytes (Option slices), wdc_print_caps (its message is #if 0), wdc_print_current_modes, wdc_downgrade_mode (bool), wdc_exec_command (unsafe fn: the command must outlive the transfer, which AT_WAIT/AT_POLL guarantee), __wdccommand_start/intr/done, wdccommand, wdccommandext, wdccommandshort, wdc_exec_xfer, wdc_xfer_get/put, wdc_scrub_xfer (unsafe, by pointer), wdc_get_xfer, wdc_free_xfer, wdc_kill_pending, __wdcerror, wdcbit_bucket, wdc_ioc_ata_cmd (dma_alloc not ported: scsiconf's DmaBuf), wdc_ioctl (ATAIOCCOMMAND; ATAIOGETTRACE with WDCDEBUG). option WDCDEBUG is feature wdcdebug: WDCDEBUG_PRINT is wdcdebug_print! (arguments type-checked in a never-called closure without it), wdc_log/wdc_get_log/ATAIOGETTRACE compiled only with it; WDCNDELAY_DEBUG (#if 0) a comment. at_poll an AtomicU16. Calls through NULL hooks panic. Host tests (ata_wdc.rs) run wdcprobe, IDENTIFY, mode selection and polled transfers on a task file emulated behind a vtbl"
 
 [[file]]
 c = "sys/dev/ata/ata_wdc.c"
