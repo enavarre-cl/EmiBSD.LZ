@@ -61,7 +61,7 @@
 //!                                          VM (the snapshot of openbsd-snapshot.toml,
 //!                                          installed under target/openbsd), compared step by
 //!                                          step (diffopenbsd.rs)
-//! cargo xtask diff-openbsd --arch A [--ipmi] [--usb] [--usb-hc H] [--ukc CMD]... [--sh CMD] probe
+//! cargo xtask diff-openbsd --arch A [--ipmi] [--nic MODEL] [--usb] [--usb-hc H] [--ukc CMD]... [--sh CMD] probe
 //!                                          that OpenBSD alone with the smokes' device
 //!                                          options, booted with `-c` and the UKC commands
 //!                                          given: its dmesg and CMD's output
@@ -135,7 +135,7 @@ const USAGE: &str = "usage: cargo xtask <ports check | ports status [--write] | 
                      smoke-all [-j N] [--just PATH] RECIPE... | \
                      unsafe-report [--write] | \
                      diff-openbsd [--arch A]... [--smp N] [--kernel-dir D] [fetch | install | run | powerbtn] | \
-                     diff-openbsd --arch A [--ipmi] [--usb] [--usb-hc xhci|ehci|uhci|ohci] [--ukc CMD]... [--sh CMD] probe | \
+                     diff-openbsd --arch A [--ipmi] [--nic MODEL] [--usb] [--usb-hc xhci|ehci|uhci|ohci] [--ukc CMD]... [--sh CMD] probe | \
                      symbolize --arch A [--kernel K] | userland --arch A | comp --arch A [--jobs N] | ntfs-image OUT [--check] | \
                      e2fsck --arch A [--disk-set NAME] [--cat PATH=TEXT]... | \
                      nvme-root --arch A [--duid HEX] [--out FILE] [--root-dev DEV]>";
