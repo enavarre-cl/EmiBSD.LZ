@@ -287,6 +287,14 @@ static HOST_CPU_INFO: HostCpuInfo = HostCpuInfo {
 /// The host's `proc0paddr`.
 static HOST_PROC0PADDR: User = User::new();
 
+/// The host's kernel text for `etext`: 128 KB plus a page, zeroed (`random_start` reads the
+/// 8 KB that start 128 KB before `etext`).
+static HOST_TEXT: [u8; 136 * 1024] = [0; 136 * 1024];
+
+/// The host's time origin for `cpu_rnd_messybits`.
+static HOST_EPOCH: std::sync::LazyLock<std::time::Instant> =
+    std::sync::LazyLock::new(std::time::Instant::now);
+
 /// The host's `struct mdproc`: nothing.
 #[derive(Default)]
 pub struct HostMdproc;
@@ -411,6 +419,16 @@ impl Cpu for Machine {
 
     fn proc0paddr() -> &'static User {
         &HOST_PROC0PADDR
+    }
+
+    /// The host has no cycle counter to read; the monotonic clock's nanoseconds stand in.
+    fn cpu_rnd_messybits() -> u32 {
+        HOST_EPOCH.elapsed().as_nanos() as u32
+    }
+
+    /// The end of [`HOST_TEXT`], a zeroed stand-in for the kernel text `random_start` reads.
+    fn etext() -> usize {
+        HOST_TEXT.as_ptr() as usize + HOST_TEXT.len()
     }
 
     fn ci_idepth(_ci: &HostCpuInfo) -> u32 {
@@ -1435,6 +1453,25 @@ static HOST_CDEVSW: crate::machine::conf::Devsw<crate::sys::conf::Cdevsw, 82> = 
     t[81] = Cell::new(cdev_ptm_init(NPTY, ptmopen, ptmclose, ptmioctl));
     crate::machine::conf::Devsw(t)
 };
+
+/// The host has no ISA bus: a compatibility-mode PCI IDE channel gets no interrupt.
+impl crate::machine::pciide_machdep::PciideMachdep for Machine {
+    fn pciide_machdep_compat_intr_establish(
+        _dev: &'static crate::sys::device::Device,
+        _pa: &crate::dev::pci::pcivar::PciAttachArgs,
+        _chan: i32,
+        _func: fn(*mut c_void) -> i32,
+        _arg: *mut c_void,
+    ) -> Option<core::ptr::NonNull<c_void>> {
+        None
+    }
+
+    unsafe fn pciide_machdep_compat_intr_disestablish(
+        _pc: crate::machine::pci_machdep::PciChipsetTag,
+        _cookie: core::ptr::NonNull<c_void>,
+    ) {
+    }
+}
 
 /// The host has no ISA bus: no interrupt line is free and none can be established.
 impl crate::machine::isa_machdep::IsaMachdep for Machine {

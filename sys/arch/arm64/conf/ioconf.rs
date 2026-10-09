@@ -48,6 +48,9 @@
 //! iic(4) stack);
 //! M16b: `ehci* at pci?` and `usb* at ehci?`, `uhci* at pci?` and `usb* at uhci?`, `ohci* at pci?` and `usb* at ohci?`,
 //! `cdce* at uhub?`, `uftdi* at uhub?` and `ucom* at uftdi?`;
+//! M16d: `viomb* at virtio?`, `viornd* at virtio?`, `viogpu* at virtio?` and `wsdisplay* at
+//! viogpu?` (merged into the `wsdisplay* at simplefb?` entry, as config(8) merges the lines of
+//! one device with the same locators);
 //! `pseudo-device pf`, `pseudo-device pflog`, `pseudo-device pty 16`, `pseudo-device vnd 4`,
 //! `pseudo-device bpfilter`, `pseudo-device loop`, `pseudo-device wg`, `pseudo-device pfsync`,
 //! `pseudo-device pflow`.
@@ -56,7 +59,7 @@
 //! attach below it) and `agintc` (`device agintc: fdt`, whose ITS `agintcmsi` attaches
 //! below it). Every other GENERIC
 //! line waits for its driver (`smbios0 at efi?`, the devices at `virtio?` but `vio*`,
-//! `vioblk*` and `vioscsi*`, the devices at `pci?` but `virtio*`, `xhci*`, `ehci*`, `uhci*`, `ohci*`, `azalia*`, `ahci*`, `nvme*`, `mpi*`, `sdhc*`, `ppb*`,
+//! `vioblk*`, `viomb*`, `viornd*`, `vioscsi*` and `viogpu*`, the devices at `pci?` but `virtio*`, `xhci*`, `ehci*`, `uhci*`, `ohci*`, `azalia*`, `ahci*`, `nvme*`, `mpi*`, `sdhc*`, `ppb*`,
 //! `em*`, `re*` and `vmx*`, the PHYs at `mii?` but `rgephy*`, `rlphy*` and `ukphy*`, the other devices at `acpi?` (`acpiac*`, `acpibtn*`, `acpicpu*`, `ahci*`, `com*`, `xhci*`,
 //! ...), `ahci*` at `fdt?`, `sdhc*` at `acpi?` and `fdt?`, `sdmmc*` at the other SD/MMC
 //! controllers, `bwfm*` at `sdmmc?`, `ehci*` at `acpi?` and `fdt?`, the other host
@@ -123,6 +126,9 @@ use crate::dev::pci::virtio_pci::VIRTIO_PCI_CA;
 use crate::dev::pci::xhci_pci::XHCI_PCI_CA;
 use crate::dev::pv::if_vio::{VIO_CA, VIO_CD};
 use crate::dev::pv::vioblk::{VIOBLK_CA, VIOBLK_CD};
+use crate::dev::pv::viogpu::{VIOGPU_CA, VIOGPU_CD};
+use crate::dev::pv::viomb::{VIOMB_CA, VIOMB_CD};
+use crate::dev::pv::viornd::{VIORND_CA, VIORND_CD};
 use crate::dev::pv::vioscsi::{VIOSCSI_CA, VIOSCSI_CD};
 use crate::dev::pv::virtio::VIRTIO_CD;
 use crate::dev::rd::rdattach;
@@ -241,13 +247,13 @@ const PV_AZALIA: &[i16] = &[17, 62];
 
 /// `pv[]` for children of the `scsi` attribute, carried by `vioblk*` (`cfdata[5]`),
 /// `softraid0` (`cfdata[11]`), `umass*` (`cfdata[24]`), `vioscsi*` (`cfdata[27]`), `ahci*`
-/// (`cfdata[30]`, through atascsi), `nvme*` (`cfdata[31]`), `mpi*` (`cfdata[70]`) and
-/// `sdmmc*` (`cfdata[72]`, M16a).
-const PV_VIOBLK: &[i16] = &[5, 11, 24, 27, 30, 31, 70, 72];
+/// (`cfdata[30]`, through atascsi), `nvme*` (`cfdata[31]`) and, M16a, `mpi*` (`cfdata[73]`)
+/// and `sdmmc*` (`cfdata[75]`).
+const PV_VIOBLK: &[i16] = &[5, 11, 24, 27, 30, 31, 73, 75];
 
-/// `pv[]` for children of `sdhc*` (`cfdata[71]`) through the `sdmmcbus` attribute
+/// `pv[]` for children of `sdhc*` (`cfdata[74]`) through the `sdmmcbus` attribute
 /// (`conf/files`: `define sdmmcbus {}`, no locators).
-const PV_SDHC: &[i16] = &[71];
+const PV_SDHC: &[i16] = &[74];
 
 /// `pv[]` for children of `scsibus*` (`cfdata[9]`).
 const PV_SCSIBUS: &[i16] = &[9];
@@ -263,8 +269,10 @@ const PV_MII: &[i16] = &[34];
 /// -1]}`).
 const LOC_MII_UNK: &[i64] = &[-1];
 
-/// `pv[]` for children of `simplefb*` (`cfdata[33]`).
-const PV_SIMPLEFB: &[i16] = &[33];
+/// `pv[]` for children of the `wsemuldisplaydev` attribute: `simplefb*` (`cfdata[33]`) and
+/// `viogpu*` (`cfdata[72]`, M16d): `config(8)` merges `wsdisplay* at simplefb?` and
+/// `wsdisplay* at viogpu?` into one entry.
+const PV_SIMPLEFB: &[i16] = &[33, 72];
 
 /// `loc[]` of an entry at `wsemuldisplaydev` with the defaults `console = -1, primary = -1,
 /// mux = 1` (`conf/files`: `define wsemuldisplaydev {[console = -1], [primary = -1], [mux =
@@ -325,9 +333,9 @@ const NFREE: usize = 8;
 
 /// How many `cfdata[]` entries: `cpu*` comes with `MULTIPROCESSOR` (`GENERIC.MP`).
 const NCFDATA: usize = if cfg!(feature = "multiprocessor") {
-    74
+    77
 } else {
-    73
+    76
 };
 
 /// `cfdata[]`, edited by UKC (`boot -c`) before autoconfiguration reads it
@@ -760,7 +768,7 @@ pub static CFDATA: StaticCell<[Cfdata; NCFDATA + NFREE]> = StaticCell::new([
         LN_MII,
         0,
     ),
-    // 38: wsdisplay* at simplefb?
+    // 38: wsdisplay* at simplefb?, wsdisplay* at viogpu?
     Cfdata::new(
         &WSDISPLAY_CA,
         &WSDISPLAY_CD,
@@ -1144,7 +1152,43 @@ pub static CFDATA: StaticCell<[Cfdata; NCFDATA + NFREE]> = StaticCell::new([
         LN_UCOMBUS,
         0,
     ),
-    // 70: mpi* at pci? (M16a)
+    // 70: viomb* at virtio? (M16d)
+    Cfdata::new(
+        &VIOMB_CA,
+        &VIOMB_CD,
+        0,
+        FSTATE_STAR,
+        &[],
+        0,
+        PV_VIRTIO,
+        0,
+        0,
+    ),
+    // 71: viornd* at virtio? (M16d)
+    Cfdata::new(
+        &VIORND_CA,
+        &VIORND_CD,
+        0,
+        FSTATE_STAR,
+        &[],
+        0,
+        PV_VIRTIO,
+        0,
+        0,
+    ),
+    // 72: viogpu* at virtio? (M16d)
+    Cfdata::new(
+        &VIOGPU_CA,
+        &VIOGPU_CD,
+        0,
+        FSTATE_STAR,
+        &[],
+        0,
+        PV_VIRTIO,
+        0,
+        0,
+    ),
+    // 73: mpi* at pci? (M16a)
     Cfdata::new(
         &MPI_PCI_CA,
         &MPI_CD,
@@ -1156,7 +1200,7 @@ pub static CFDATA: StaticCell<[Cfdata; NCFDATA + NFREE]> = StaticCell::new([
         LN_PCI,
         0,
     ),
-    // 71: sdhc* at pci? (M16a)
+    // 74: sdhc* at pci? (M16a)
     Cfdata::new(
         &SDHC_PCI_CA,
         &SDHC_CD,
@@ -1168,9 +1212,9 @@ pub static CFDATA: StaticCell<[Cfdata; NCFDATA + NFREE]> = StaticCell::new([
         LN_PCI,
         0,
     ),
-    // 72: sdmmc* at sdhc? (M16a)
+    // 75: sdmmc* at sdhc? (M16a)
     Cfdata::new(&SDMMC_CA, &SDMMC_CD, 0, FSTATE_STAR, &[], 0, PV_SDHC, 0, 0),
-    // 73: cpu* at mainbus? (GENERIC.MP)
+    // 76: cpu* at mainbus? (GENERIC.MP)
     #[cfg(feature = "multiprocessor")]
     Cfdata::new(&CPU_CA, &CPU_CD, 1, FSTATE_STAR, &[], 0, PV_MAINBUS, 0, 1),
     // The free slots.

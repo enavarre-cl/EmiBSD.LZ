@@ -1088,3 +1088,62 @@ inphy (Sonnet), pcn then ne (Sonnet), each resuming from the first run's notes a
 Effort: _(user)_
 
 Time: _(user)_
+
+## M16d Console, virtio and legacy devices
+
+Boundary: the commit that marks M16d met ("docs: M16d met"). The work started on 02f407d3
+(M16c's close) in one coordinator branch, beside M16a's coordinator (the user's decision of
+2026-10-09: two sub-milestones at once). Its own work is `main..` that commit: 23
+commits (with this one; `git rev-list --count --no-merges main..`) besides 9 merges,
+`git diff --shortstat main HEAD`: 74 files changed, 22258 insertions(+), 272 deletions(-) before this commit. Three subagents in harness
+worktrees, at most two at once: the PS/2 keyboard and mouse (Opus, which ran pms(4) in a
+subagent of its own), the virtio drivers (Opus), then rnd(4) (Opus) once the virtio agent
+found the entropy pool was a placeholder; the coordinator ported eap(4) with midi(4), lpt(4),
+pcppi(4) and spkr(4) itself while they ran.
+
+- Went well: probing first. Before any port, the OpenBSD 8.0 snapshot booted on each QEMU
+  device with M16d's new probe options (`--virtio-rng`, `--balloon`, `--virtio-gpu`,
+  `--parallel`, `--pcspk`, `--audio es1370`, and the smokes' `--sendkey-after`/`--monitor-after`
+  pairs fired while `--sh` runs). Every criterion behaves on OpenBSD 8.0, so none was restated;
+  the probe logs went to the agents as `PROBES.md`, and they gave the expected lines (the PS/2
+  attach lines, the balloon sensors, viogpu's run-on attach line). The probe also chose a
+  device: QEMU's virtio-mmio GPU is legacy and viogpu refuses it on OpenBSD 8.0 too, so
+  `--virtio-gpu` is `virtio-gpu-pci` on arm64.
+- Went well: the referee settled two arguments. The PS/2 agent found that opening
+  `/dev/wskbd0` fails about half the time; a probe of eight opens on OpenBSD 8.0 failed four
+  with the same `pckbd_enable: command error`, so the C stayed and the smoke retries (EXT-181).
+  A guess about spkr(4)'s note arithmetic became a reproduced kernel trap on OpenBSD 8.0
+  (`integer divide fault`, `Stopped at playtone+0xa4`, EXT-182).
+- Went well: honest criteria. "virtio-rng feeds rnd(4)" was found to end in an `unported!`
+  stub: rnd.c had been a SplitMix64 placeholder since M3. It was ported whole (the input ring,
+  the pool, SHA-512 extraction, ChaCha20 with rekeying, `random_start` with the boot loader's
+  seed through the `PT_OPENBSD_RANDOMIZE` segment, `/dev/random`) rather than declared done.
+- Failed: a smoke that could not fail for the right reason. smoke-bell's tone check found an
+  empty WAV file; it was neither the bell path nor QEMU's 16 kB stdio buffer (both suspected)
+  but the session: the ramdisk has no printf(1), so no BEL was ever written. ksh's `print`
+  writes it. A debug kernel with three printfs showed `wsdisplay_emulbell` never ran, which
+  pointed there in one run.
+- Failed: `cfdata[]` again, with three agents and the coordinator appending at 84. Each merge
+  renumbered by script; the ISA children are in GENERIC's order (pckbc0, pcppi0, lpt0), so the
+  dmesg order matches OpenBSD's. An early merge of the keyboard agent's first commits (so pcppi
+  could call `pckbd_hookup_bell`) cost one more renumbering at its final merge.
+- Failed: the machine. Two coordinators, their subagents and a CI at once took the load to
+  40-50 on 11 cores and a locked CI failed two arm64 smokes from slowness; since then nobody
+  starts smokes, tests, builds or clippy while another holds `ci.lock` (the main session's
+  rule, in AGENT-RULES), and every heavy step here waited on the lock in a script.
+- Idioms: spkr's play-string interpreter runs over a copy of its state and hands each tone or
+  rest to a call-back, so the same code plays on the speaker and is host-tested; the C's
+  file-scope state is one `StaticCell`. rnd(4) added a `docs/C_TO_RUST.md` row for
+  loader-filled sections.
+- Rules: `xtask.md` gains M16d's device options and the probe's monitor pairs;
+  `boot-and-link.md` the randomize program header; AGENT-RULES the machine-load and
+  external-bugs rules. `docs/EXTERNAL_BUGS.md` gains EXT-181 to EXT-191.
+- Open: viocon(4) has no smoke (in neither GENERIC; built behind a cargo feature); Limine
+  boots get no seed (`warning: no entropy supplied by boot loader`, an `unported!` line), only
+  efiboot fills it; `lpt* at puc?` waits for `lpt_puc.c`.
+- Numbers: ported 1070 → 1102 (`cargo xtask ports status`, totals 96 todo, 139 wip, 1102 ported, 37 skipped, 1374 entries); tests bsd 2537 → 2621 (2378 passed, 243 ignored in `just test`); smoke recipes 72 → 78 (smoke-pckbc, smoke-eap, smoke-lpt, smoke-bell, smoke-virtio, smoke-viogpu); unsafe-report kernel 8313 → 8546 blocks.
+  `just jobs=3 ci` rc=0 in 28m41s (78 of 78 smokes in 23m37s); `just diff-openbsd` rc=0, 102 steps, 99 equal, 3 expected, 0 unexpected, on both archs.
+
+Effort: _(user)_
+
+Time: _(user)_

@@ -170,7 +170,7 @@ rust = "sys/arch/arm64/include/cpu.rs"
 status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "a50845f609e00860e26eac541a0f05789133506d"
-notes = "M0: DAIF helpers (restore_daif, enable/disable_irq_daif[_ret], intr_enable/disable/restore); M4: struct cpu_info (the fields the exception and interrupt paths use, in C order), curcpu (tpidr_el1), cpu_number, cpu_info_primary, CPU_IS_PRIMARY/RUNNING, CPUF_*, CI_DDB_*; the topology fields, the scheduler state, CTL_MACHDEP and the cache helpers come with M4-b/M5; M5: ci_schedstate, ci_queue, MAXCPUS (1), CPU_INFO_UNIT (0 until struct device), struct clockframe = trapframe, CLKF_USERMODE/PC/INTR; M5-b1: ci_curproc/ci_curpcb typed; M7a-3b: PROC_PC/PROC_STACK through Cpu::proc_pc/proc_stack; M8: need_proftick (aston) behind machine::cpu; M11a: struct cpu_info complete (topology, PSCI idle state, opp table/idx/max, cpu supply, capacity, prev_sleep/last_itime; srp hazards, xcall and ci_uvm still out); fields other CPUs touch are atomics (ci_flags, ci_want_resched, ci_opp_idx/max, ci_ddb_paused) or CiPtr (ci_next, ci_curproc, ci_curpm); ci_dev is a *const Device; CPU_IS_RUNNING true without MULTIPROCESSOR, CPU_INFO_UNIT from ci_dev with it; CPU_BUSY_CYCLE"
+notes = "M0: DAIF helpers (restore_daif, enable/disable_irq_daif[_ret], intr_enable/disable/restore); M4: struct cpu_info (the fields the exception and interrupt paths use, in C order), curcpu (tpidr_el1), cpu_number, cpu_info_primary, CPU_IS_PRIMARY/RUNNING, CPUF_*, CI_DDB_*; the topology fields, the scheduler state, CTL_MACHDEP and the cache helpers come with M4-b/M5; M5: ci_schedstate, ci_queue, MAXCPUS (1), CPU_INFO_UNIT (0 until struct device), struct clockframe = trapframe, CLKF_USERMODE/PC/INTR; M5-b1: ci_curproc/ci_curpcb typed; M7a-3b: PROC_PC/PROC_STACK through Cpu::proc_pc/proc_stack; M8: need_proftick (aston) behind machine::cpu; M11a: struct cpu_info complete (topology, PSCI idle state, opp table/idx/max, cpu supply, capacity, prev_sleep/last_itime; srp hazards, xcall and ci_uvm still out); fields other CPUs touch are atomics (ci_flags, ci_want_resched, ci_opp_idx/max, ci_ddb_paused) or CiPtr (ci_next, ci_curproc, ci_curpm); ci_dev is a *const Device; CPU_IS_RUNNING true without MULTIPROCESSOR, CPU_INFO_UNIT from ci_dev with it; CPU_BUSY_CYCLE; M16d: cpu_rnd_messybits (CNTVCT_EL0 XOR its bit reversal, low 32 bits), machine::Cpu::cpu_rnd_messybits"
 
 # ---------------------------------------------------------------------------
 # M1: libkern
@@ -592,7 +592,7 @@ rust = "sys/dev/isa/isareg.rs"
 status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "1a5cd2d5da9e7b5fcff324a7f8b6defaa86384b6"
-notes = "M2: IO_TIMER1, IO_RTC, IO_NMI; M4: IO_ICU1, IO_ICU2, IO_ICUSIZE; M7b: IOM_BEGIN, IOM_END, IOM_SIZE (the ISA hole, bus_space_map); the rest of the port map and the IRQ names come with the ISA bus; M8: IO_DMA1, IO_DMAPG, IO_DMA2 (isa.c)"
+notes = "M2: IO_TIMER1, IO_RTC, IO_NMI; M4: IO_ICU1, IO_ICU2, IO_ICUSIZE; M7b: IOM_BEGIN, IOM_END, IOM_SIZE (the ISA hole, bus_space_map); the rest of the port map and the IRQ names come with the ISA bus; M8: IO_DMA1, IO_DMAPG, IO_DMA2 (isa.c); M16d: IO_KBD (pckbc_isa.c)"
 
 # printf, panic, the message buffer, main()
 
@@ -630,7 +630,7 @@ status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "a51ecb9a39f6a6983aed871ee646c96515e24e75"
 deps = ["sys/kern/subr_prf.c", "sys/dev/cons.h"]
-notes = "M2: main() skeleton in the C's order (consinit, copyright, then every step reports itself unported until its subsystem lands), copyright, boothowto, db_active, ncpus, ncpusfound; main takes no framep and never returns; proc0/process0, start_init, check_console, kthreads are M5; M5-a: timeout_startup, SCHED_LOCK_INIT, sched_init, clockqueue_init, sched_init_cpu and timeout_proc_init are called; initclocks runs (the LAPIC timer on amd64, agtimer on arm64) and selftest=clock checks it; M5-b1: proc0/process0/pgrp0/session0 are statics here; main sets curproc first, calls procinit, builds process 0 as the C does (process_initialize, the lists and hashes, PS_SYSTEM/P_SYSTEM, SONPROC, nice, the name), p_addr = proc0paddr, chgproccnt(0, 1), ci_randseed; crget, the p_sleep_to timeout (endtsleep, M5-b2), signal_init/siginit, fdinit, lim_startup and uvmspace_init stay reported; M5-b2: proc0 p_sleep_to (endtsleep), sleep_queue_init, scheduler_start, kthread_run_deferred_queue (idle and softclock threads), the proc0 tsleep loop (without feature qemu) and selftest=kthread; M6-b: initprocess (null until start_init), the reaper kthread, the boot modules printed (init as a Limine module); the kthread selftest runs after the reaper exists; M6-b2: vmspace0 (uvmspace_init over pmap_kernel, process0/proc0 point at it), fork1 of init (FORK_FORK, start_init) sets initprocess, start_init_exec with its wakeup, start_init (waits for main, check_console reported, execs the init module through exec_image and returns to user mode; 'init: not found' panics as in C), set_init_module from stand; proc0 sleeps in its tsleep loop under qemu too (init's exit ends the run); the kthread selftest still exits early; M7a: rw_obj_init runs; M7a-3b: limit0 with lim_startup and uvm_init_limits; M7b: taskq_init runs (systq and systqmp threads from kthread_run_deferred_queue), selftest=taskq after the reaper exists; kern_prot.c: proc0's credentials (crget, cr_ngroups = 1) are real; M7b: mbinit runs (followed by selftest mbufs under feature qemu), mbcpuinit runs; M7b: config_init, the config_pending wait (tsleep on config_pending) and config_process_deferred_mountroot run (subr_autoconf.c); kern_descrip.c: filedesc_init runs, process 0 gets fdinit() as ps_fd/p_fd, start_init installs the console stand-in (dev/consfile.rs) at descriptors 0, 1 and 2 before the exec, where init(8) would open /dev/console; kern_sig.c: sigacts0, signal_init, siginit(&sigacts0), process 0's ps_sigacts; start_init clears init's ps_sigflags; M7b: ifinit, softnet_init and softnet_percpu run (net/if.c), the pseudo-devices attach from machine::autoconf::pdevinit() (the ioconf.rs tables: loop, so lo0 attaches at boot; M8: pty, NPTY 16), pdevinit_done is an atomic flag; vfs stage 1: vfsinit runs; mountroot (systm.h's MOUNTROOT, NULL: setroot is subr_disk.c) is checked where the C does: with none, main prints 'cannot mount root: no root file system' instead of panicking and goes on without rootvnode (init still execs its boot module); with one, MNT_ROOTFS, VFS_ROOT into rootvnode and the current directories of process 0 and init as in C; check_console looks /dev/console up with namei and warns ('warning: /dev/console does not exist' in smoke); M7b IPv4: rtable_init before the pseudo-devices and domaininit after them (inetdomain, routedomain); selftest ping (feature qemu) after the taskq selftest; vfs stage 2: lf_init; the cleaner (buf_daemon) and update (syncer_thread) kthreads, recorded in cleanerproc/syncerproc; aiodoned and zerothread reported; sys_pipe.c: pipe_init runs; M8: tty_init runs (tty.c); M7b: ifinit, softnet_init and softnet_percpu run (net/if.c), the pseudo-devices attach from machine::autoconf::pdevinit() (the ioconf.rs tables: loop, so lo0 attaches at boot), pdevinit_done is an atomic flag; vfs stage 1: vfsinit runs; mountroot (systm.h's MOUNTROOT, NULL: setroot is subr_disk.c) is checked where the C does: with none, main prints 'cannot mount root: no root file system' instead of panicking and goes on without rootvnode (init still execs its boot module); with one, MNT_ROOTFS, VFS_ROOT into rootvnode and the current directories of process 0 and init as in C; check_console looks /dev/console up with namei and warns ('warning: /dev/console does not exist' in smoke); M7b IPv4: rtable_init before the pseudo-devices and domaininit after them (inetdomain, routedomain); selftest ping (feature qemu) after the taskq selftest; vfs stage 2: lf_init; the cleaner (buf_daemon) and update (syncer_thread) kthreads, recorded in cleanerproc/syncerproc; aiodoned and zerothread reported; sys_pipe.c: pipe_init runs; ffs: rootvp and swapdev_vp (AtomicPtr with rootvp()/set_rootvp() and swapdev_vp()/set_swapdev_vp()), set by ffs_mountroot; M8: disk_init runs (subr_disk.c), rd(4) attaches from pdevinit and selftest rd_check (feature qemu) opens rd0a through bdevsw and reads the ffs superblock right after; M7b: ifinit, softnet_init and softnet_percpu run (net/if.c), the pseudo-devices attach from machine::autoconf::pdevinit() (the ioconf.rs tables: loop, so lo0 attaches at boot), pdevinit_done is an atomic flag; vfs stage 1: vfsinit runs; mountroot (systm.h's MOUNTROOT, NULL: setroot is subr_disk.c) is checked where the C does: with none, main prints 'cannot mount root: no root file system' instead of panicking and goes on without rootvnode (init still execs its boot module); with one, MNT_ROOTFS, VFS_ROOT into rootvnode and the current directories of process 0 and init as in C; check_console looks /dev/console up with namei and warns ('warning: /dev/console does not exist' in smoke); M7b IPv4: rtable_init before the pseudo-devices and domaininit after them (inetdomain, routedomain); selftest ping (feature qemu) after the taskq selftest; vfs stage 2: lf_init; the cleaner (buf_daemon) and update (syncer_thread) kthreads, recorded in cleanerproc/syncerproc; aiodoned and zerothread reported; sys_pipe.c: pipe_init runs; M8: start_init is the C's (the argument page at USRSTACK - PAGE_SIZE, the boot flags and path copied out, sys_execve of each initpaths[] entry), then exec_image of the init boot module with the same arguments while no root file system exists; init_exec is not needed (exec_maxhdrsz is a const fn); uvmpd_tune where the page daemon would start; M7b: ifinit, softnet_init and softnet_percpu run (net/if.c), the pseudo-devices attach from machine::autoconf::pdevinit() (the ioconf.rs tables: loop, so lo0 attaches at boot), pdevinit_done is an atomic flag; vfs stage 1: vfsinit runs; mountroot (systm.h's MOUNTROOT, NULL: setroot is subr_disk.c) is checked where the C does: with none, main prints 'cannot mount root: no root file system' instead of panicking and goes on without rootvnode (init still execs its boot module); with one, MNT_ROOTFS, VFS_ROOT into rootvnode and the current directories of process 0 and init as in C; check_console looks /dev/console up with namei and warns ('warning: /dev/console does not exist' in smoke); M7b IPv4: rtable_init before the pseudo-devices and domaininit after them (inetdomain, routedomain); selftest ping (feature qemu) after the taskq selftest; vfs stage 2: lf_init; the cleaner (buf_daemon) and update (syncer_thread) kthreads, recorded in cleanerproc/syncerproc; aiodoned and zerothread reported; sys_pipe.c: pipe_init runs; M8: start_init is the C's (the argument page at USRSTACK - PAGE_SIZE, the boot flags and path copied out, sys_execve of each initpaths[] entry), then exec_image of the init boot module with the same arguments while no root file system exists; init_exec is not needed (exec_maxhdrsz is a const fn); uvmpd_tune where the page daemon would start; M8: futex_init; M7b: ifinit, softnet_init and softnet_percpu run (net/if.c), the pseudo-devices attach from machine::autoconf::pdevinit() (the ioconf.rs tables: loop, so lo0 attaches at boot), pdevinit_done is an atomic flag; vfs stage 1: vfsinit runs; mountroot (systm.h's MOUNTROOT, NULL: setroot is subr_disk.c) is checked where the C does: with none, main prints 'cannot mount root: no root file system' instead of panicking and goes on without rootvnode (init still execs its boot module); with one, MNT_ROOTFS, VFS_ROOT into rootvnode and the current directories of process 0 and init as in C; check_console looks /dev/console up with namei and warns ('warning: /dev/console does not exist' in smoke); M7b IPv4: rtable_init before the pseudo-devices and domaininit after them (inetdomain, routedomain); selftest ping (feature qemu) after the taskq selftest; vfs stage 2: lf_init; the cleaner (buf_daemon) and update (syncer_thread) kthreads, recorded in cleanerproc/syncerproc; aiodoned and zerothread reported; sys_pipe.c: pipe_init runs; M8: start_init is the C's (the argument page at USRSTACK - PAGE_SIZE, the boot flags and path copied out, sys_execve of each initpaths[] entry), then exec_image of the init boot module with the same arguments while no root file system exists; init_exec is not needed (exec_maxhdrsz is a const fn); uvmpd_tune where the page daemon would start; M8: futex_init; M8: start_periodic_resettodr; M8: diskconf runs (machine::autoconf::diskconf, setroot); with a ramdisk the root is mounted from rd0a and start_init execs OpenBSD's /sbin/init from it, without one main still says it cannot mount root and execs the init boot module; sockets: soinit runs; domaininit initialises unixdomain too; kern_event.c: kqueue_init and kqueue_init_percpu are called; M9b: CRYPTO (GENERIC's option) is configured: crypto_init and swcr_init run after the pseudo-devices, wg attaches from pdevinit; M9d: NSTOEPLITZ: stoeplitz_init runs before the pseudo-devices; pf and pflog attach from pdevinit; M10e: main calls nfs_init (nfs_subs.rs) before vfsinit under nfsserver or nfsclient, as the C; M11a: KERNEL_LOCK_INIT and KERNEL_LOCK (sys::systm functions, nothing without MULTIPROCESSOR) and cpu_boot_secondary_processors (MULTIPROCESSOR) in their places; M11a: smr_startup, smr_startup_thread, start_init's KERNEL_UNLOCK before init's first return to user mode; with MULTIPROCESSOR and qemu `selftest: N cpus running` after cpu_boot_secondary_processors (selftest=kthread boots the APs itself first); pool_gc_pages (MULTIPROCESSOR) reported until the per-CPU pool caches; M13 (vmx): the qemu network self-test (selftest::ping_gateway) runs after cpu_boot_secondary_processors and the per-CPU checks, so intr_barrier reaches queue interrupts on the APs"
+notes = "M2: main() skeleton in the C's order (consinit, copyright, then every step reports itself unported until its subsystem lands), copyright, boothowto, db_active, ncpus, ncpusfound; main takes no framep and never returns; proc0/process0, start_init, check_console, kthreads are M5; M5-a: timeout_startup, SCHED_LOCK_INIT, sched_init, clockqueue_init, sched_init_cpu and timeout_proc_init are called; initclocks runs (the LAPIC timer on amd64, agtimer on arm64) and selftest=clock checks it; M5-b1: proc0/process0/pgrp0/session0 are statics here; main sets curproc first, calls procinit, builds process 0 as the C does (process_initialize, the lists and hashes, PS_SYSTEM/P_SYSTEM, SONPROC, nice, the name), p_addr = proc0paddr, chgproccnt(0, 1), ci_randseed; crget, the p_sleep_to timeout (endtsleep, M5-b2), signal_init/siginit, fdinit, lim_startup and uvmspace_init stay reported; M5-b2: proc0 p_sleep_to (endtsleep), sleep_queue_init, scheduler_start, kthread_run_deferred_queue (idle and softclock threads), the proc0 tsleep loop (without feature qemu) and selftest=kthread; M6-b: initprocess (null until start_init), the reaper kthread, the boot modules printed (init as a Limine module); the kthread selftest runs after the reaper exists; M6-b2: vmspace0 (uvmspace_init over pmap_kernel, process0/proc0 point at it), fork1 of init (FORK_FORK, start_init) sets initprocess, start_init_exec with its wakeup, start_init (waits for main, check_console reported, execs the init module through exec_image and returns to user mode; 'init: not found' panics as in C), set_init_module from stand; proc0 sleeps in its tsleep loop under qemu too (init's exit ends the run); the kthread selftest still exits early; M7a: rw_obj_init runs; M7a-3b: limit0 with lim_startup and uvm_init_limits; M7b: taskq_init runs (systq and systqmp threads from kthread_run_deferred_queue), selftest=taskq after the reaper exists; kern_prot.c: proc0's credentials (crget, cr_ngroups = 1) are real; M7b: mbinit runs (followed by selftest mbufs under feature qemu), mbcpuinit runs; M7b: config_init, the config_pending wait (tsleep on config_pending) and config_process_deferred_mountroot run (subr_autoconf.c); kern_descrip.c: filedesc_init runs, process 0 gets fdinit() as ps_fd/p_fd, start_init installs the console stand-in (dev/consfile.rs) at descriptors 0, 1 and 2 before the exec, where init(8) would open /dev/console; kern_sig.c: sigacts0, signal_init, siginit(&sigacts0), process 0's ps_sigacts; start_init clears init's ps_sigflags; M7b: ifinit, softnet_init and softnet_percpu run (net/if.c), the pseudo-devices attach from machine::autoconf::pdevinit() (the ioconf.rs tables: loop, so lo0 attaches at boot; M8: pty, NPTY 16), pdevinit_done is an atomic flag; vfs stage 1: vfsinit runs; mountroot (systm.h's MOUNTROOT, NULL: setroot is subr_disk.c) is checked where the C does: with none, main prints 'cannot mount root: no root file system' instead of panicking and goes on without rootvnode (init still execs its boot module); with one, MNT_ROOTFS, VFS_ROOT into rootvnode and the current directories of process 0 and init as in C; check_console looks /dev/console up with namei and warns ('warning: /dev/console does not exist' in smoke); M7b IPv4: rtable_init before the pseudo-devices and domaininit after them (inetdomain, routedomain); selftest ping (feature qemu) after the taskq selftest; vfs stage 2: lf_init; the cleaner (buf_daemon) and update (syncer_thread) kthreads, recorded in cleanerproc/syncerproc; aiodoned and zerothread reported; sys_pipe.c: pipe_init runs; M8: tty_init runs (tty.c); M7b: ifinit, softnet_init and softnet_percpu run (net/if.c), the pseudo-devices attach from machine::autoconf::pdevinit() (the ioconf.rs tables: loop, so lo0 attaches at boot), pdevinit_done is an atomic flag; vfs stage 1: vfsinit runs; mountroot (systm.h's MOUNTROOT, NULL: setroot is subr_disk.c) is checked where the C does: with none, main prints 'cannot mount root: no root file system' instead of panicking and goes on without rootvnode (init still execs its boot module); with one, MNT_ROOTFS, VFS_ROOT into rootvnode and the current directories of process 0 and init as in C; check_console looks /dev/console up with namei and warns ('warning: /dev/console does not exist' in smoke); M7b IPv4: rtable_init before the pseudo-devices and domaininit after them (inetdomain, routedomain); selftest ping (feature qemu) after the taskq selftest; vfs stage 2: lf_init; the cleaner (buf_daemon) and update (syncer_thread) kthreads, recorded in cleanerproc/syncerproc; aiodoned and zerothread reported; sys_pipe.c: pipe_init runs; ffs: rootvp and swapdev_vp (AtomicPtr with rootvp()/set_rootvp() and swapdev_vp()/set_swapdev_vp()), set by ffs_mountroot; M8: disk_init runs (subr_disk.c), rd(4) attaches from pdevinit and selftest rd_check (feature qemu) opens rd0a through bdevsw and reads the ffs superblock right after; M7b: ifinit, softnet_init and softnet_percpu run (net/if.c), the pseudo-devices attach from machine::autoconf::pdevinit() (the ioconf.rs tables: loop, so lo0 attaches at boot), pdevinit_done is an atomic flag; vfs stage 1: vfsinit runs; mountroot (systm.h's MOUNTROOT, NULL: setroot is subr_disk.c) is checked where the C does: with none, main prints 'cannot mount root: no root file system' instead of panicking and goes on without rootvnode (init still execs its boot module); with one, MNT_ROOTFS, VFS_ROOT into rootvnode and the current directories of process 0 and init as in C; check_console looks /dev/console up with namei and warns ('warning: /dev/console does not exist' in smoke); M7b IPv4: rtable_init before the pseudo-devices and domaininit after them (inetdomain, routedomain); selftest ping (feature qemu) after the taskq selftest; vfs stage 2: lf_init; the cleaner (buf_daemon) and update (syncer_thread) kthreads, recorded in cleanerproc/syncerproc; aiodoned and zerothread reported; sys_pipe.c: pipe_init runs; M8: start_init is the C's (the argument page at USRSTACK - PAGE_SIZE, the boot flags and path copied out, sys_execve of each initpaths[] entry), then exec_image of the init boot module with the same arguments while no root file system exists; init_exec is not needed (exec_maxhdrsz is a const fn); uvmpd_tune where the page daemon would start; M7b: ifinit, softnet_init and softnet_percpu run (net/if.c), the pseudo-devices attach from machine::autoconf::pdevinit() (the ioconf.rs tables: loop, so lo0 attaches at boot), pdevinit_done is an atomic flag; vfs stage 1: vfsinit runs; mountroot (systm.h's MOUNTROOT, NULL: setroot is subr_disk.c) is checked where the C does: with none, main prints 'cannot mount root: no root file system' instead of panicking and goes on without rootvnode (init still execs its boot module); with one, MNT_ROOTFS, VFS_ROOT into rootvnode and the current directories of process 0 and init as in C; check_console looks /dev/console up with namei and warns ('warning: /dev/console does not exist' in smoke); M7b IPv4: rtable_init before the pseudo-devices and domaininit after them (inetdomain, routedomain); selftest ping (feature qemu) after the taskq selftest; vfs stage 2: lf_init; the cleaner (buf_daemon) and update (syncer_thread) kthreads, recorded in cleanerproc/syncerproc; aiodoned and zerothread reported; sys_pipe.c: pipe_init runs; M8: start_init is the C's (the argument page at USRSTACK - PAGE_SIZE, the boot flags and path copied out, sys_execve of each initpaths[] entry), then exec_image of the init boot module with the same arguments while no root file system exists; init_exec is not needed (exec_maxhdrsz is a const fn); uvmpd_tune where the page daemon would start; M8: futex_init; M7b: ifinit, softnet_init and softnet_percpu run (net/if.c), the pseudo-devices attach from machine::autoconf::pdevinit() (the ioconf.rs tables: loop, so lo0 attaches at boot), pdevinit_done is an atomic flag; vfs stage 1: vfsinit runs; mountroot (systm.h's MOUNTROOT, NULL: setroot is subr_disk.c) is checked where the C does: with none, main prints 'cannot mount root: no root file system' instead of panicking and goes on without rootvnode (init still execs its boot module); with one, MNT_ROOTFS, VFS_ROOT into rootvnode and the current directories of process 0 and init as in C; check_console looks /dev/console up with namei and warns ('warning: /dev/console does not exist' in smoke); M7b IPv4: rtable_init before the pseudo-devices and domaininit after them (inetdomain, routedomain); selftest ping (feature qemu) after the taskq selftest; vfs stage 2: lf_init; the cleaner (buf_daemon) and update (syncer_thread) kthreads, recorded in cleanerproc/syncerproc; aiodoned and zerothread reported; sys_pipe.c: pipe_init runs; M8: start_init is the C's (the argument page at USRSTACK - PAGE_SIZE, the boot flags and path copied out, sys_execve of each initpaths[] entry), then exec_image of the init boot module with the same arguments while no root file system exists; init_exec is not needed (exec_maxhdrsz is a const fn); uvmpd_tune where the page daemon would start; M8: futex_init; M8: start_periodic_resettodr; M8: diskconf runs (machine::autoconf::diskconf, setroot); with a ramdisk the root is mounted from rd0a and start_init execs OpenBSD's /sbin/init from it, without one main still says it cannot mount root and execs the init boot module; sockets: soinit runs; domaininit initialises unixdomain too; kern_event.c: kqueue_init and kqueue_init_percpu are called; M9b: CRYPTO (GENERIC's option) is configured: crypto_init and swcr_init run after the pseudo-devices, wg attaches from pdevinit; M9d: NSTOEPLITZ: stoeplitz_init runs before the pseudo-devices; pf and pflog attach from pdevinit; M10e: main calls nfs_init (nfs_subs.rs) before vfsinit under nfsserver or nfsclient, as the C; M11a: KERNEL_LOCK_INIT and KERNEL_LOCK (sys::systm functions, nothing without MULTIPROCESSOR) and cpu_boot_secondary_processors (MULTIPROCESSOR) in their places; M11a: smr_startup, smr_startup_thread, start_init's KERNEL_UNLOCK before init's first return to user mode; with MULTIPROCESSOR and qemu `selftest: N cpus running` after cpu_boot_secondary_processors (selftest=kthread boots the APs itself first); pool_gc_pages (MULTIPROCESSOR) reported until the per-CPU pool caches; M13 (vmx): the qemu network self-test (selftest::ping_gateway) runs after cpu_boot_secondary_processors and the per-CPU checks, so intr_barrier reaches queue interrupts on the APs; M16d: random_start(boothowto & RB_GOODRANDOM) is called (was an unported! report); __guard_local is GUARD_LOCAL (export_name __guard_local) in .openbsd.randomdata, read by random_start"
 
 # ddb-lite (Mach-licensed sources: Carnegie Mellon)
 
@@ -773,7 +773,7 @@ rust = "sys/arch/amd64/amd64/autoconf.rs"
 status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "44b9bb496717cc9e5cbade667b3fd255cc9f2131"
-notes = "M2: cold (now sys/systm.rs); M7b: cpu_configure in the C's order around config_rootfound(\"mainbus\") (panics if it fails); lapic_boot_init at the architectural base before it (what acpimadt/mpbios would do), and after it lapic_enable, lapic_set_lvt, intr_enable and lapic_calibrate_timer (what the boot processor's attach adds to the CPU_ROLE_SP attach mainbus does without tables), intr_printconfig, lcr8(0), spl0, cold = 0; pmap_randomize, map_tramps, ioapic_enable, unmap_startup and the viac3/rdrand timeouts reported; device_register (empty, as in C) through machine::autoconf; nam2blk[]; diskconf (setroot, dumpconf, parsedisk) waits for disks; M7b (bus_dma): bus_dma_init runs (then selftest bus_dma_check on pci_bus_dma_tag under feature qemu), mbuf_dma_64bit_enable runs (it reports ifnetlist itself); M8: diskconf (no bootdev under Limine: setroot gets none; dkcsumattach and dumpconf reported); M10e: diskconf with NFSCLIENT: the interface whose MAC is bios_bootmac (BIOS_BOOTMAC, a StaticCell nothing fills under Limine) becomes the boot device through parsedisk, and the PXE boot MAC line is printed as the C does; M11a: lapic_calibrate_timer only when the boot CPU attached as CPU_ROLE_SP: a CPU_ROLE_BP attach (MULTIPROCESSOR) calibrated in cpu_attach, as the C does; M13: lapic_boot_init no longer runs here (acpimadt's, or mainbus's without a MADT); ioapic_enable runs where the C calls it; M14 (A2): cpu_configure calls map_tramps (it does nothing under Limine); boot(8)'s bootdev is recorded (machdep.rs BOOTDEV) but dkcsumattach is not ported, so setroot finds the root by BOOTARG_BOOTDUID"
+notes = "M2: cold (now sys/systm.rs); M7b: cpu_configure in the C's order around config_rootfound(\"mainbus\") (panics if it fails); lapic_boot_init at the architectural base before it (what acpimadt/mpbios would do), and after it lapic_enable, lapic_set_lvt, intr_enable and lapic_calibrate_timer (what the boot processor's attach adds to the CPU_ROLE_SP attach mainbus does without tables), intr_printconfig, lcr8(0), spl0, cold = 0; pmap_randomize, map_tramps, ioapic_enable, unmap_startup and the viac3/rdrand timeouts reported; device_register (empty, as in C) through machine::autoconf; nam2blk[]; diskconf (setroot, dumpconf, parsedisk) waits for disks; M7b (bus_dma): bus_dma_init runs (then selftest bus_dma_check on pci_bus_dma_tag under feature qemu), mbuf_dma_64bit_enable runs (it reports ifnetlist itself); M8: diskconf (no bootdev under Limine: setroot gets none; dkcsumattach and dumpconf reported); M10e: diskconf with NFSCLIENT: the interface whose MAC is bios_bootmac (BIOS_BOOTMAC, a StaticCell nothing fills under Limine) becomes the boot device through parsedisk, and the PXE boot MAC line is printed as the C does; M11a: lapic_calibrate_timer only when the boot CPU attached as CPU_ROLE_SP: a CPU_ROLE_BP attach (MULTIPROCESSOR) calibrated in cpu_attach, as the C does; M13: lapic_boot_init no longer runs here (acpimadt's, or mainbus's without a MADT); ioapic_enable runs where the C calls it; M14 (A2): cpu_configure calls map_tramps (it does nothing under Limine); boot(8)'s bootdev is recorded (machdep.rs BOOTDEV) but dkcsumattach is not ported, so setroot finds the root by BOOTARG_BOOTDUID; M16d: cpu_configure starts the rdrand timeout (timeout_set(&rdrand_tmo, rdrand, &rdrand_tmo); rdrand(&rdrand_tmo)); viac3_rnd stays reported (via.c)"
 
 [[file]]
 c = "sys/arch/amd64/include/bus.h"
@@ -824,7 +824,7 @@ status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "95ffefae93d5b98fae8403a5f8998d77ec55dca8"
 deps = ["sys/arch/amd64/amd64/consinit.c", "sys/arch/amd64/amd64/autoconf.c", "sys/arch/amd64/isa/clock.c", "sys/kern/subr_log.c", "sys/sys/reboot.h"]
-notes = "M2: init_x86_64 (message buffer, consinit, boot -d -> db_enter), boot (cold path; under feature qemu the key wait is the failure exit; resettodr/if_downall/uvm_shutdown/dumpsys/config_suspend_all/cpu_reset reported unported; M14: vfs_shutdown is called, as the C does), delay (the DELAY macro over delay_func), cpureset_delay, lid_action, waittime; M3: the direct map, pmap_bootstrap, the memory clusters, cpu_startup's memory lines; M4: setgate/unsetgate/setregion/set_mem_segment/set_sys_segment, idt (a static page) and idt_allocmap, cpu_init_idt, idt_vec_alloc/alloc_range/set/free, x86_64_proc0_tss_ldt_init (ltr/lldt only, proc0's pcb reported), splassert_check, the GDT/TSS/IDT setup and cpu_init_msrs first thing in init_x86_64, which ends as the C does (intr_default_setup, softintr_init, splraise(IPL_IPI), intr_enable), cpu_enter_pages from cpu_startup; the bootinfo parsing, the ACPI/MP tables, cpu_init, dumpsys, sendsig/setregs, sysctl are M5 to M6; M5: startclocks in cpu_startup (rtcinit reported, M7), initclock_func/startclock_func (StaticCells with setters), cpu_initclocks, cpu_startclock, need_resched (aston reported, M5-b); M5-b1: proc0paddr (a static u-area; the boot stack stays Limine's), x86_64_proc0_tss_ldt_init sets ci_curpcb, pcb_fsbase, pcb_kstack, md_regs and (a deviation, for cpu_switchto) pcb_cr3 = %cr3; M5-b2: proc0 gets a full u-area (PROC0_UAREA, proc0paddr), aston, clear_resched, cpu_unidle (UP), cpu_idle_cycle_hlt/cpu_idle_cycle (cpu_idle_cycle_fcn is a direct call until acpicpu); cold moved to sys/systm.rs; M6-b2: reset_segs, setregs (MDP_IRET, pcb_fsbase, the user trap frame; initialize_thread_xstate is M6-c); kern_sig.c: sendsig, sys_sigreturn (through machine::MachineSignal), copyoutfpu, initialize_thread_xstate (reported: fpu.c), signotify (aston; cpu_kick is MULTIPROCESSOR), setregs calls initialize_thread_xstate; without fpu.c fpu_save_len is the fxsave size, cpu_use_xsaves is false, fpusave/fpureset/fpu_cleandata/xrstor_user are reported, so a handler shares the interrupted code's FPU state; the bootinfo parsing, the ACPI/MP tables, cpu_init, dumpsys, sendsig/setregs, sysctl are M5 to M6; cpu_startup prints version (conf/vers.rs) since kern_sysctl.c; M5: startclocks in cpu_startup (rtcinit reported, M7), initclock_func/startclock_func (StaticCells with setters), cpu_initclocks, cpu_startclock, need_resched (aston reported, M5-b); M5-b1: proc0paddr (a static u-area; the boot stack stays Limine's), x86_64_proc0_tss_ldt_init sets ci_curpcb, pcb_fsbase, pcb_kstack, md_regs and (a deviation, for cpu_switchto) pcb_cr3 = %cr3; M5-b2: proc0 gets a full u-area (PROC0_UAREA, proc0paddr), aston, clear_resched, cpu_unidle (UP), cpu_idle_cycle_hlt/cpu_idle_cycle (cpu_idle_cycle_fcn is a direct call until acpicpu); cold moved to sys/systm.rs; M6-b2: reset_segs, setregs (MDP_IRET, pcb_fsbase, the user trap frame; initialize_thread_xstate is M6-c); vfs stage 2: cpu_startup calls bufinit after the memory lines, as the C does; M8: cpu_startup makes exec_map (uvm_km_suballoc of 16 * NCARGS, VM_MAP_PAGEABLE); M8: copyin32 (alignment check, then copyin) behind machine::copy; M8: fpuinit from init_x86_64; initialize_thread_xstate (the non-XSAVES branch), sendsig fpusave and sys_sigreturn fpureset/fpu_cleandata/xrstor_user are real; fpu_save_len is fpu.c's; TSC: delay_func (StaticCell<fn(i32)>, delay_is_i8254), amd64_delay_quality, delay_init, delay_fini, cpu_set_vendor; init_x86_64 does locore0.S's CPUID probe (cpuid_level, cpu_vendor, cpu_id, cpu_*feature with CPUID_NXE) before cpu_set_vendor; the meltdown and SEV probes are not there; M10a: cpu_startup makes phys_map (uvm_km_suballoc of VM_PHYS_SIZE, flags 0) and stores it in uvm_extern's PHYS_MAP, as it does exec_map; M11a: the MULTIPROCESSOR parts: cpu_kick (X86_IPI_NOP to another CPU; no mwait, cpu_init_mwait is not ported), cpu_unidle's IPI, need_resched's cpu_kick (ci_want_resched is atomic), signotify's cpu_kick(p->p_cpu), boot's x86_broadcast_ipi(X86_IPI_HALT); init_x86_64 keeps BootInfo::mp in cpu.rs's BOOT_MP for mainbus_attach and mp_cpu_start (the C reads the ACPI/MP tables during autoconfiguration); map_tramps' MP trampoline pages and the avail_start floor are replaced-by-limine; M13: cpu_sysctl (through machine::cpu::cpu_sysctl, called by sys_sysctl for CTL_MACHDEP) is ported: consdev, chr2blk, cpuvendor, kbdreset (sysctl_securelevel_int), allowaperture (the #else: 0, APERTURE not configured), tscfreq, vmmode (cpu_sev_guestmode stays 0: the SEV probe is not ported), cpuid, cpufeature and the sysctl_bounded_arr table (hibernatedelay, lidaction, pwraction, xcrypt, invarianttsc, retpoline); bios_sysctl is EOPNOTSUPP as the C answers without bootapiver BAPIV_VECTOR (Limine passes no boot arguments: BIOS_DEV/BIOS_DISKINFO/BIOS_CKSUMLEN unreachable); forceukbd is compiled out as in C without pckbc (EOPNOTSUPP, pckbc not ported); amd64_has_xcrypt (identcpu.rs) stays 0 (via_nano_setup not ported) and need_retpoline (cpu.rs) stays 1 (no codepatch); kbd_reset and hibernate_delay are statics here; the CPU_* names and CTL_MACHDEP_NAMES are in include/cpu.rs; M14 (A2, the boot(8) entry): getbootinfo (the bootarg32 walk: BOOTARG_MEMMAP, DISKINFO (its record kept, bios_getdiskinfo not ported), APMINFO/PCIINFO ignored as in C, CKSUMLEN, CONSDEV (comcons* except comconsiot: consinit attaches in I/O space), BOOTMAC, DDB, BOOTDUID, BOOTSR (copied, then zeroed), EFIINFO, UCODE) behind machine::Cpu::getbootinfo, with init_x86_64's boot(8) half: the bootapiver and size checks, the EFI memory map relocated to first_avail, avail_start (MP trampolines), the bios_memmap flensing into a MemMap (the [IOM_END, KERNTEXTOFF) block only where boot(8) says free; memory above the 4 GB locore0 maps is reported, pmap_bootstrap's direct-map extension is not ported), pmap_direct_base without pmap_direct_rand; init_x86_64 calls pmap_prealloc_lowmem_ptps after a boot(8) boot; map_tramps (the MP half; the lo32 bounce page reported; nothing under Limine); the globals ssym, esym, bootdev, biosbasemem, bootapiver, bootinfo[], bootinfo_size, bios_cksumlen, bios_diskinfo, bios_efiinfo, bios_ucode, avail_start; the CPUs come from a MADT walk (cpu.rs mp_madt_cpus) since acpimadt.c is not ported; M13 (rasops): bios_efiinfo() (reads BIOS_EFIINFO, which getbootinfo fills after a boot(8) boot and init_x86_64 under Limine when the machine booted through UEFI): config_acpi, system_table and the fb_* fields from Limine's framebuffer response (masks from the channel sizes and shifts, the reserved mask the rest of the pixel), for efifb(4); M16e: bios_memmap kept as its record's place in bootinfo[] (BIOS_MEMMAP) with bios_memmap() over its entries; empty under Limine; M16e: cpu_idle_cycle_fcn and cpu_suspend_cycle_fcn (StaticCells written while cold), setperf_prio, cpu_idle_cycle through cpu_idle_cycle_fcn, cpu_kick and cpu_unidle with their mwait branches (cpu_mwait_size, MWAIT_IN_IDLE/KEEP_IDLING/ONLY)"
+notes = "M2: init_x86_64 (message buffer, consinit, boot -d -> db_enter), boot (cold path; under feature qemu the key wait is the failure exit; resettodr/if_downall/uvm_shutdown/dumpsys/config_suspend_all/cpu_reset reported unported; M14: vfs_shutdown is called, as the C does), delay (the DELAY macro over delay_func), cpureset_delay, lid_action, waittime; M3: the direct map, pmap_bootstrap, the memory clusters, cpu_startup's memory lines; M4: setgate/unsetgate/setregion/set_mem_segment/set_sys_segment, idt (a static page) and idt_allocmap, cpu_init_idt, idt_vec_alloc/alloc_range/set/free, x86_64_proc0_tss_ldt_init (ltr/lldt only, proc0's pcb reported), splassert_check, the GDT/TSS/IDT setup and cpu_init_msrs first thing in init_x86_64, which ends as the C does (intr_default_setup, softintr_init, splraise(IPL_IPI), intr_enable), cpu_enter_pages from cpu_startup; the bootinfo parsing, the ACPI/MP tables, cpu_init, dumpsys, sendsig/setregs, sysctl are M5 to M6; M5: startclocks in cpu_startup (rtcinit reported, M7), initclock_func/startclock_func (StaticCells with setters), cpu_initclocks, cpu_startclock, need_resched (aston reported, M5-b); M5-b1: proc0paddr (a static u-area; the boot stack stays Limine's), x86_64_proc0_tss_ldt_init sets ci_curpcb, pcb_fsbase, pcb_kstack, md_regs and (a deviation, for cpu_switchto) pcb_cr3 = %cr3; M5-b2: proc0 gets a full u-area (PROC0_UAREA, proc0paddr), aston, clear_resched, cpu_unidle (UP), cpu_idle_cycle_hlt/cpu_idle_cycle (cpu_idle_cycle_fcn is a direct call until acpicpu); cold moved to sys/systm.rs; M6-b2: reset_segs, setregs (MDP_IRET, pcb_fsbase, the user trap frame; initialize_thread_xstate is M6-c); kern_sig.c: sendsig, sys_sigreturn (through machine::MachineSignal), copyoutfpu, initialize_thread_xstate (reported: fpu.c), signotify (aston; cpu_kick is MULTIPROCESSOR), setregs calls initialize_thread_xstate; without fpu.c fpu_save_len is the fxsave size, cpu_use_xsaves is false, fpusave/fpureset/fpu_cleandata/xrstor_user are reported, so a handler shares the interrupted code's FPU state; the bootinfo parsing, the ACPI/MP tables, cpu_init, dumpsys, sendsig/setregs, sysctl are M5 to M6; cpu_startup prints version (conf/vers.rs) since kern_sysctl.c; M5: startclocks in cpu_startup (rtcinit reported, M7), initclock_func/startclock_func (StaticCells with setters), cpu_initclocks, cpu_startclock, need_resched (aston reported, M5-b); M5-b1: proc0paddr (a static u-area; the boot stack stays Limine's), x86_64_proc0_tss_ldt_init sets ci_curpcb, pcb_fsbase, pcb_kstack, md_regs and (a deviation, for cpu_switchto) pcb_cr3 = %cr3; M5-b2: proc0 gets a full u-area (PROC0_UAREA, proc0paddr), aston, clear_resched, cpu_unidle (UP), cpu_idle_cycle_hlt/cpu_idle_cycle (cpu_idle_cycle_fcn is a direct call until acpicpu); cold moved to sys/systm.rs; M6-b2: reset_segs, setregs (MDP_IRET, pcb_fsbase, the user trap frame; initialize_thread_xstate is M6-c); vfs stage 2: cpu_startup calls bufinit after the memory lines, as the C does; M8: cpu_startup makes exec_map (uvm_km_suballoc of 16 * NCARGS, VM_MAP_PAGEABLE); M8: copyin32 (alignment check, then copyin) behind machine::copy; M8: fpuinit from init_x86_64; initialize_thread_xstate (the non-XSAVES branch), sendsig fpusave and sys_sigreturn fpureset/fpu_cleandata/xrstor_user are real; fpu_save_len is fpu.c's; TSC: delay_func (StaticCell<fn(i32)>, delay_is_i8254), amd64_delay_quality, delay_init, delay_fini, cpu_set_vendor; init_x86_64 does locore0.S's CPUID probe (cpuid_level, cpu_vendor, cpu_id, cpu_*feature with CPUID_NXE) before cpu_set_vendor; the meltdown and SEV probes are not there; M10a: cpu_startup makes phys_map (uvm_km_suballoc of VM_PHYS_SIZE, flags 0) and stores it in uvm_extern's PHYS_MAP, as it does exec_map; M11a: the MULTIPROCESSOR parts: cpu_kick (X86_IPI_NOP to another CPU; no mwait, cpu_init_mwait is not ported), cpu_unidle's IPI, need_resched's cpu_kick (ci_want_resched is atomic), signotify's cpu_kick(p->p_cpu), boot's x86_broadcast_ipi(X86_IPI_HALT); init_x86_64 keeps BootInfo::mp in cpu.rs's BOOT_MP for mainbus_attach and mp_cpu_start (the C reads the ACPI/MP tables during autoconfiguration); map_tramps' MP trampoline pages and the avail_start floor are replaced-by-limine; M13: cpu_sysctl (through machine::cpu::cpu_sysctl, called by sys_sysctl for CTL_MACHDEP) is ported: consdev, chr2blk, cpuvendor, kbdreset (sysctl_securelevel_int), allowaperture (the #else: 0, APERTURE not configured), tscfreq, vmmode (cpu_sev_guestmode stays 0: the SEV probe is not ported), cpuid, cpufeature and the sysctl_bounded_arr table (hibernatedelay, lidaction, pwraction, xcrypt, invarianttsc, retpoline); bios_sysctl is EOPNOTSUPP as the C answers without bootapiver BAPIV_VECTOR (Limine passes no boot arguments: BIOS_DEV/BIOS_DISKINFO/BIOS_CKSUMLEN unreachable); forceukbd (M16d, with pckbc(4): read-only once set, else sysctl_int and, when set, pckbc_release_console); amd64_has_xcrypt (identcpu.rs) stays 0 (via_nano_setup not ported) and need_retpoline (cpu.rs) stays 1 (no codepatch); kbd_reset and hibernate_delay are statics here; the CPU_* names and CTL_MACHDEP_NAMES are in include/cpu.rs; M14 (A2, the boot(8) entry): getbootinfo (the bootarg32 walk: BOOTARG_MEMMAP, DISKINFO (its record kept, bios_getdiskinfo not ported), APMINFO/PCIINFO ignored as in C, CKSUMLEN, CONSDEV (comcons* except comconsiot: consinit attaches in I/O space), BOOTMAC, DDB, BOOTDUID, BOOTSR (copied, then zeroed), EFIINFO, UCODE) behind machine::Cpu::getbootinfo, with init_x86_64's boot(8) half: the bootapiver and size checks, the EFI memory map relocated to first_avail, avail_start (MP trampolines), the bios_memmap flensing into a MemMap (the [IOM_END, KERNTEXTOFF) block only where boot(8) says free; memory above the 4 GB locore0 maps is reported, pmap_bootstrap's direct-map extension is not ported), pmap_direct_base without pmap_direct_rand; init_x86_64 calls pmap_prealloc_lowmem_ptps after a boot(8) boot; map_tramps (the MP half; the lo32 bounce page reported; nothing under Limine); the globals ssym, esym, bootdev, biosbasemem, bootapiver, bootinfo[], bootinfo_size, bios_cksumlen, bios_diskinfo, bios_efiinfo, bios_ucode, avail_start; the CPUs come from a MADT walk (cpu.rs mp_madt_cpus) since acpimadt.c is not ported; M13 (rasops): bios_efiinfo() (reads BIOS_EFIINFO, which getbootinfo fills after a boot(8) boot and init_x86_64 under Limine when the machine booted through UEFI): config_acpi, system_table and the fb_* fields from Limine's framebuffer response (masks from the channel sizes and shifts, the reserved mask the rest of the pixel), for efifb(4); M16e: bios_memmap kept as its record's place in bootinfo[] (BIOS_MEMMAP) with bios_memmap() over its entries; empty under Limine; M16e: cpu_idle_cycle_fcn and cpu_suspend_cycle_fcn (StaticCells written while cold), setperf_prio, cpu_idle_cycle through cpu_idle_cycle_fcn, cpu_kick and cpu_unidle with their mwait branches (cpu_mwait_size, MWAIT_IN_IDLE/KEEP_IDLING/ONLY); M16d: etext() (the linker script's etext, machine::Cpu::etext, for rnd.c's random_start)"
 
 [[file]]
 c = "sys/arch/amd64/isa/clock.c"
@@ -868,7 +868,7 @@ status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "b955775e37a97fb7172fd379cd3be435dc9e3686"
 deps = ["sys/scsi/sd.c", "sys/scsi/cd.c", "sys/dev/vnd.c", "sys/dev/bio.c"]
-notes = "M8: bdevsw[] (20 slots) and cdevsw[] (102 slots) at the C's major numbers, as Devsw tables of Cells behind machine::conf (nblkdev/nchrdev are their lengths, cdevsw_set lets a console driver take a slot over); the drivers present: cn 0, ctty 1, mm 2, pts 5, ptc 6, com 8 (NCOM 4), filedesc 22, ptm 81; M8: rd 17 (bdev_disk_init) and 47 (cdev_disk_init), NRD 1; every other slot is cdev_notdef()/bdev_notdef() (ENODEV, d_type 0) until its driver is ported (log 7 waits for subr_log.c's entry points, random 45 for rnd.c); mem_no, chrtoblktbl[], swapdev, iskmemdev, iszerodev, getnulldev; constab[] (cninit) and findblkmajor/dev_rawpart (dk_mountroot) are not used: the console is attached directly (consinit.rs) and there is no disk; APERTURE, MTRR and the <machine/conf.h> drivers are not configured; M9d: cdevsw 73 is pf (cdev_pf_init); M10a: sd 4 (bdev_disk_init) and 13 (cdev_disk_init), NSD 1 (scsi/sd.rs); M13: cd 6 (bdev_disk_init) and 15 (cdev_disk_init), NCD 1 (scsi/cd.rs); M10c: vnd 14 (bdev_disk_init) and 41 (cdev_disk_init), NVND 4 (dev/vnd.rs); M10f: cdevsw 79 is bio (cdev_bio_init, NBIO 1; dev/bio.rs) M10d: cdevsw 92 is cdev_fuse_init(NFUSE, fuse) under feature fuse (cnotdef without it).; M12: cdevsw 61 is usb (cdev_usb_init: usbopen, usbclose, usbioctl); M12: cdevsw 42 is audio (cdev_audio_init: open, close, read, write, ioctl, kqfilter); M14: cdevsw 90 is diskmap (cdev_disk_init(1, diskmap), dev/diskmap.rs); M13: cdevsw 12 is wsdisplay (cdev_wsdisplay_init, NWSDISPLAY 1: wsdisplayopen .. wsdisplaykqfilter, dev/wscons/wsdisplay.rs); M13 (wskbd): wskbd 67 and wsmux 69 (cdev_mouse_init, NWSKBD/NWSMUX 1)"
+notes = "M8: bdevsw[] (20 slots) and cdevsw[] (102 slots) at the C's major numbers, as Devsw tables of Cells behind machine::conf (nblkdev/nchrdev are their lengths, cdevsw_set lets a console driver take a slot over); the drivers present: cn 0, ctty 1, mm 2, pts 5, ptc 6, com 8 (NCOM 4), filedesc 22, ptm 81; M8: rd 17 (bdev_disk_init) and 47 (cdev_disk_init), NRD 1; every other slot is cdev_notdef()/bdev_notdef() (ENODEV, d_type 0) until its driver is ported (log 7 waits for subr_log.c's entry points, random 45 for rnd.c); mem_no, chrtoblktbl[], swapdev, iskmemdev, iszerodev, getnulldev; constab[] (cninit) and findblkmajor/dev_rawpart (dk_mountroot) are not used: the console is attached directly (consinit.rs) and there is no disk; APERTURE, MTRR and the <machine/conf.h> drivers are not configured; M9d: cdevsw 73 is pf (cdev_pf_init); M10a: sd 4 (bdev_disk_init) and 13 (cdev_disk_init), NSD 1 (scsi/sd.rs); M13: cd 6 (bdev_disk_init) and 15 (cdev_disk_init), NCD 1 (scsi/cd.rs); M10c: vnd 14 (bdev_disk_init) and 41 (cdev_disk_init), NVND 4 (dev/vnd.rs); M10f: cdevsw 79 is bio (cdev_bio_init, NBIO 1; dev/bio.rs) M10d: cdevsw 92 is cdev_fuse_init(NFUSE, fuse) under feature fuse (cnotdef without it).; M12: cdevsw 61 is usb (cdev_usb_init: usbopen, usbclose, usbioctl); M12: cdevsw 42 is audio (cdev_audio_init: open, close, read, write, ioctl, kqfilter); M14: cdevsw 90 is diskmap (cdev_disk_init(1, diskmap), dev/diskmap.rs); M13: cdevsw 12 is wsdisplay (cdev_wsdisplay_init, NWSDISPLAY 1: wsdisplayopen .. wsdisplaykqfilter, dev/wscons/wsdisplay.rs); M13 (wskbd): wskbd 67 and wsmux 69 (cdev_mouse_init, NWSKBD/NWSMUX 1); M16d: cdevsw 45 is random (cdev_random_init(1, random): randomopen .. randomkqfilter, dev/rnd.rs)"
 
 # arm64: the same, plus the bus_space table and the bootstrap device map
 
@@ -921,7 +921,7 @@ status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "c9656ebcea23151ba4968b4eab8099c095180027"
 deps = ["sys/arch/arm64/arm64/bus_space.c", "sys/arch/arm64/arm64/intr.c", "sys/dev/ic/pluart.c", "sys/kern/subr_log.c", "sys/sys/reboot.h"]
-notes = "M2: initarm (the 1 GiB TTBR0 Device-nGnRnE identity block for devices until pmap, message buffer, consinit, boot -d -> db_enter), boot (cold path; under feature qemu the key wait is the failure exit; vfs_shutdown/resettodr/if_downall/uvm_shutdown/dumpsys/config_suspend_all reported unported), cold, waittime, cpuresetfn, powerdownfn; the bootargs parsing is BootInfo::boothowto; M3: the memory setup and pmap_bootstrap; M4: cpu_info_primary, SP_EL1/tpidr_el1/VBAR_EL1 first thing, fdt_init of the bootloader DTB, consinit = pluart_init_cons (the other *_init_cons are deferred drivers), stdout_node/stdout_speed, fdt_find_cons, (M8: cn_rx_intr_establish is gone; pluart_fdt_attach establishes the console's interrupt); cpu_info[], dumpsys, sendsig/setregs, sysctl are M5 to M6; cpu_startup prints version (conf/vers.rs) since kern_sysctl.c; M5: need_resched (aston reported, M5-b); M5-b1: proc0paddr and proc0tf statics, cpu_startup sets proc0.p_addr and curpcb (pcb_flags, pcb_tf); M5-b2: proc0 gets a full u-area (PROC0_UAREA, proc0paddr), cpu_idle_enter/cycle/leave (cpu_wfi), cpu_switchto (fpu_drop then cpuswitch.S), aston, clear_resched, cpu_unidle (UP); cold moved to sys/systm.rs; M6-b2: setregs (pm_guarded from EXEC_NOBTCFI, the FPU state dropped, the EL0 trap frame with PSR_M_EL0t|PSR_DIT; pmap_setpauthkeys M7); vfs stage 2: cpu_startup calls bufinit before avail mem, as the C does; M4: cpu_info_primary, SP_EL1/tpidr_el1/VBAR_EL1 first thing, fdt_init of the bootloader DTB, consinit = pluart_init_cons (the other *_init_cons are deferred drivers), stdout_node/stdout_speed, fdt_find_cons, cn_rx_intr_establish (the console receive interrupt pluart_fdt_attach would establish, until autoconf M5); cpu_info[], dumpsys, sendsig/setregs, sysctl are M5 to M6; cpu_startup prints version (conf/vers.rs) since kern_sysctl.c; M5: need_resched (aston reported, M5-b); M5-b1: proc0paddr and proc0tf statics, cpu_startup sets proc0.p_addr and curpcb (pcb_flags, pcb_tf); M5-b2: proc0 gets a full u-area (PROC0_UAREA, proc0paddr), cpu_idle_enter/cycle/leave (cpu_wfi), cpu_switchto (fpu_drop then cpuswitch.S), aston, clear_resched, cpu_unidle (UP); cold moved to sys/systm.rs; M6-b2: setregs (pm_guarded from EXEC_NOBTCFI, the FPU state dropped, the EL0 trap frame with PSR_M_EL0t|PSR_DIT; pmap_setpauthkeys M7); vfs stage 2: cpu_startup calls bufinit before avail mem, as the C does; M8: cpu_startup makes exec_map (uvm_km_suballoc of 16 * NCARGS, VM_MAP_PAGEABLE); efi(4): mmap/mmap_size/mmap_desc_size/mmap_desc_ver (the UEFI memory map from the boot protocol, relocated into a static buffer, efi_mmap) and system_table (SYSTEM_TABLE, an initarm local in C) instead of efiboot's openbsd,uefi-* properties; M10a: cpu_startup makes phys_map (uvm_km_suballoc of VM_PHYS_SIZE, flags 0) and stores it in uvm_extern's PHYS_MAP, as it does exec_map; M11a: cpu_info[MAXCPUS] (CiPtr, cpu_info_primary first), cpu_info_list() (cpu.c's), cpu_idle_cycle_fcn (StaticCell, cpu_wfi), need_resched's cpu_kick, the MULTIPROCESSOR signotify (aston + cpu_unidle(p->p_cpu)), ci_want_resched atomic; initarm keeps BootInfo.mp in BOOT_MP for cpu_start_secondary; cpu_unidle moved to cpu.rs; M13: cpu_sysctl (through machine::cpu::cpu_sysctl, called by sys_sysctl for CTL_MACHDEP) is ported: compatible (the root node's property through OF_getprop), the id_aa64* quads (smfr0 is 0 as in C), led_blink (the C then calls blink_led_timeout, which returns at once with no blink_led registered: blink_led_register and the LED drivers are not ported) and the sysctl_bounded_arr table (lidaction, lid_action is a static in machdep.rs, nothing reads it until aplsmc); the CPU_* names and CTL_MACHDEP_NAMES are in include/cpu.rs; M13: cpuresetfn/powerdownfn are set by psci(4) (dev/fdt/psci.c) through machine::fdt::set_cpuresetfn/set_powerdownfn, so boot() powers off (halt -p: SYSTEM_OFF) and resets (reboot: SYSTEM_RESET) through PSCI; cpu_reset is boot()'s doreset path; M14 (A3): boot(8)'s entry: getbootinfo (the /chosen half of initarm: bootargs via collect_kernel_args/process_kernel_args, openbsd,boothowto/bootduid/bootmac/sr-bootuuid/sr-bootkey (explicit_bzero of the props)/uefi-mmap-*/uefi-system-table/dma-constraint), the memory (EFI map Conventional/BootServices, /memory fallback, /reserved-memory no-map, the 64 MB block, its part after esym usable; memreg_add/memreg_remove), FDT and EFI map read in place through locore0.S's direct map (bootarg_direct_map, not in the C, maps the RAM gigabytes); dma_constraint stays constant, a narrower one is reported by initarm; BootMp from /cpus with PSCI CPU_ON through dev/fdt/psci.rs's psci_cpu_on (psci attaches before the processors); M14: boot() calls vfs_shutdown(curproc) (skipped with no thread on the CPU), so a halt or reboot syncs the disks; M13 (wsdisplay): consinit calls simplefb_init_cons(&arm64_bs_tag) after pluart_init_cons, as the C does (the frame buffer is the console only when stdout-path names it)"
+notes = "M2: initarm (the 1 GiB TTBR0 Device-nGnRnE identity block for devices until pmap, message buffer, consinit, boot -d -> db_enter), boot (cold path; under feature qemu the key wait is the failure exit; vfs_shutdown/resettodr/if_downall/uvm_shutdown/dumpsys/config_suspend_all reported unported), cold, waittime, cpuresetfn, powerdownfn; the bootargs parsing is BootInfo::boothowto; M3: the memory setup and pmap_bootstrap; M4: cpu_info_primary, SP_EL1/tpidr_el1/VBAR_EL1 first thing, fdt_init of the bootloader DTB, consinit = pluart_init_cons (the other *_init_cons are deferred drivers), stdout_node/stdout_speed, fdt_find_cons, (M8: cn_rx_intr_establish is gone; pluart_fdt_attach establishes the console's interrupt); cpu_info[], dumpsys, sendsig/setregs, sysctl are M5 to M6; cpu_startup prints version (conf/vers.rs) since kern_sysctl.c; M5: need_resched (aston reported, M5-b); M5-b1: proc0paddr and proc0tf statics, cpu_startup sets proc0.p_addr and curpcb (pcb_flags, pcb_tf); M5-b2: proc0 gets a full u-area (PROC0_UAREA, proc0paddr), cpu_idle_enter/cycle/leave (cpu_wfi), cpu_switchto (fpu_drop then cpuswitch.S), aston, clear_resched, cpu_unidle (UP); cold moved to sys/systm.rs; M6-b2: setregs (pm_guarded from EXEC_NOBTCFI, the FPU state dropped, the EL0 trap frame with PSR_M_EL0t|PSR_DIT; pmap_setpauthkeys M7); vfs stage 2: cpu_startup calls bufinit before avail mem, as the C does; M4: cpu_info_primary, SP_EL1/tpidr_el1/VBAR_EL1 first thing, fdt_init of the bootloader DTB, consinit = pluart_init_cons (the other *_init_cons are deferred drivers), stdout_node/stdout_speed, fdt_find_cons, cn_rx_intr_establish (the console receive interrupt pluart_fdt_attach would establish, until autoconf M5); cpu_info[], dumpsys, sendsig/setregs, sysctl are M5 to M6; cpu_startup prints version (conf/vers.rs) since kern_sysctl.c; M5: need_resched (aston reported, M5-b); M5-b1: proc0paddr and proc0tf statics, cpu_startup sets proc0.p_addr and curpcb (pcb_flags, pcb_tf); M5-b2: proc0 gets a full u-area (PROC0_UAREA, proc0paddr), cpu_idle_enter/cycle/leave (cpu_wfi), cpu_switchto (fpu_drop then cpuswitch.S), aston, clear_resched, cpu_unidle (UP); cold moved to sys/systm.rs; M6-b2: setregs (pm_guarded from EXEC_NOBTCFI, the FPU state dropped, the EL0 trap frame with PSR_M_EL0t|PSR_DIT; pmap_setpauthkeys M7); vfs stage 2: cpu_startup calls bufinit before avail mem, as the C does; M8: cpu_startup makes exec_map (uvm_km_suballoc of 16 * NCARGS, VM_MAP_PAGEABLE); efi(4): mmap/mmap_size/mmap_desc_size/mmap_desc_ver (the UEFI memory map from the boot protocol, relocated into a static buffer, efi_mmap) and system_table (SYSTEM_TABLE, an initarm local in C) instead of efiboot's openbsd,uefi-* properties; M10a: cpu_startup makes phys_map (uvm_km_suballoc of VM_PHYS_SIZE, flags 0) and stores it in uvm_extern's PHYS_MAP, as it does exec_map; M11a: cpu_info[MAXCPUS] (CiPtr, cpu_info_primary first), cpu_info_list() (cpu.c's), cpu_idle_cycle_fcn (StaticCell, cpu_wfi), need_resched's cpu_kick, the MULTIPROCESSOR signotify (aston + cpu_unidle(p->p_cpu)), ci_want_resched atomic; initarm keeps BootInfo.mp in BOOT_MP for cpu_start_secondary; cpu_unidle moved to cpu.rs; M13: cpu_sysctl (through machine::cpu::cpu_sysctl, called by sys_sysctl for CTL_MACHDEP) is ported: compatible (the root node's property through OF_getprop), the id_aa64* quads (smfr0 is 0 as in C), led_blink (the C then calls blink_led_timeout, which returns at once with no blink_led registered: blink_led_register and the LED drivers are not ported) and the sysctl_bounded_arr table (lidaction, lid_action is a static in machdep.rs, nothing reads it until aplsmc); the CPU_* names and CTL_MACHDEP_NAMES are in include/cpu.rs; M13: cpuresetfn/powerdownfn are set by psci(4) (dev/fdt/psci.c) through machine::fdt::set_cpuresetfn/set_powerdownfn, so boot() powers off (halt -p: SYSTEM_OFF) and resets (reboot: SYSTEM_RESET) through PSCI; cpu_reset is boot()'s doreset path; M14 (A3): boot(8)'s entry: getbootinfo (the /chosen half of initarm: bootargs via collect_kernel_args/process_kernel_args, openbsd,boothowto/bootduid/bootmac/sr-bootuuid/sr-bootkey (explicit_bzero of the props)/uefi-mmap-*/uefi-system-table/dma-constraint), the memory (EFI map Conventional/BootServices, /memory fallback, /reserved-memory no-map, the 64 MB block, its part after esym usable; memreg_add/memreg_remove), FDT and EFI map read in place through locore0.S's direct map (bootarg_direct_map, not in the C, maps the RAM gigabytes); dma_constraint stays constant, a narrower one is reported by initarm; BootMp from /cpus with PSCI CPU_ON through dev/fdt/psci.rs's psci_cpu_on (psci attaches before the processors); M14: boot() calls vfs_shutdown(curproc) (skipped with no thread on the CPU), so a halt or reboot syncs the disks; M13 (wsdisplay): consinit calls simplefb_init_cons(&arm64_bs_tag) after pluart_init_cons, as the C does (the frame buffer is the console only when stdout-path names it); M16d: etext() (kernel.ld now provides etext), machine::Cpu::etext; initarm records the kernel image's range and physical offset for pmap_extract"
 
 [[file]]
 c = "sys/arch/arm64/arm64/cpu.c"
@@ -1064,7 +1064,7 @@ rust = "sys/arch/amd64/include/specialreg.rs"
 status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "32b156b78a79cb3d0633edbf7b3d3531fa116924"
-notes = "CR0/CR3 bits, MSR_EFER with its flags, the syscall and segment-base MSRs (MSR_STAR/LSTAR/CSTAR/SFMASK/FSBASE/GSBASE/KERNELGSBASE), MSR_APICBASE and its APICBASE_* bits; the CPUID feature words, the other MSRs and the MTRR/PAT definitions come with CPU identification (M4-b2); M8: CR4_PSE/PAE/PGE/OSFXSR/OSXMMEXCPT/UMIP/PCIDE/OSXSAVE/SMEP/SMAP/PKE and CR4_DEFAULT (reference test); TSC: CPUID_TSC, CPUIDECX_HV, SEFF0EBX_TSC_ADJUST, CPUID_NXE, CPUID_RDTSCP, CPUIDEDX_ITSC, CPUIDEAX_VERID, CPUIDEDX_NUM_FC, MSR_TSC_ADJUST, MSR_BIOS_SIGN, the MSR_PERF_FIXED_CTR*/MSR_PERF_GLOBAL_* bits cpu_freq_ctr uses, MSR_PATCH_LEVEL, MSR_HWCR/HWCR_TSCFREQSEL, MSR_PSTATEDEF/PSTATEDEF_EN; CPUID/CPUID_LEAF are the functions cpuid/cpuid_leaf over __cpuid_count; M11a: CR0_NE, CR0_WP, CR0_DEFAULT (an application processor's CR0, as mptramp.S loads it); M14: CPUID_APIC (mp_cpu_start), MSR_SEV_GHCB (locore0.S's #VC termination); M16e: CPUIDECX_MWAIT, TPM_SENSOR, TPM_ARAT, TPM_PTS"
+notes = "CR0/CR3 bits, MSR_EFER with its flags, the syscall and segment-base MSRs (MSR_STAR/LSTAR/CSTAR/SFMASK/FSBASE/GSBASE/KERNELGSBASE), MSR_APICBASE and its APICBASE_* bits; the CPUID feature words, the other MSRs and the MTRR/PAT definitions come with CPU identification (M4-b2); M8: CR4_PSE/PAE/PGE/OSFXSR/OSXMMEXCPT/UMIP/PCIDE/OSXSAVE/SMEP/SMAP/PKE and CR4_DEFAULT (reference test); TSC: CPUID_TSC, CPUIDECX_HV, SEFF0EBX_TSC_ADJUST, CPUID_NXE, CPUID_RDTSCP, CPUIDEDX_ITSC, CPUIDEAX_VERID, CPUIDEDX_NUM_FC, MSR_TSC_ADJUST, MSR_BIOS_SIGN, the MSR_PERF_FIXED_CTR*/MSR_PERF_GLOBAL_* bits cpu_freq_ctr uses, MSR_PATCH_LEVEL, MSR_HWCR/HWCR_TSCFREQSEL, MSR_PSTATEDEF/PSTATEDEF_EN; CPUID/CPUID_LEAF are the functions cpuid/cpuid_leaf over __cpuid_count; M11a: CR0_NE, CR0_WP, CR0_DEFAULT (an application processor's CR0, as mptramp.S loads it); M14: CPUID_APIC (mp_cpu_start), MSR_SEV_GHCB (locore0.S's #VC termination); M16e: CPUIDECX_MWAIT, TPM_SENSOR, TPM_ARAT, TPM_PTS; M16d: CPUIDECX_RDRAND, SEFF0EBX_RDSEED"
 
 [[file]]
 c = "sys/arch/arm64/include/pte.h"
@@ -1144,7 +1144,7 @@ deps = [
     "sys/arch/arm64/include/vmparam.h",
     "sys/uvm/uvm_page.c",
 ]
-notes = "pte_desc, the pmapvp tables, kernel pmap, pmap_bootstrap adopting the bootloader's four-level tables (copies of L0 and the kernel slot's L1, TTBR1 switched to them, MAIR indices 2-4), vp lookup/enter/set_l1-3, kvp/kpted allocators over the direct map, pmap_growkernel (populates the first GiB, which the C's pmap_bootstrap does), kenter/kenter_cache/kremove(_pg), fill_pte, pte_insert/update/remove, extract, zero/copy page via the HHDM, pmap_steal_memory (not in the C; OpenBSD arm64 has no direct map nor PMAP_STEAL_MEMORY); pmap_vp_populate and pmap_fault_fixup: M7a; M5-b2: pmap_activate, pmap_deactivate, pmap_setttb (extern C for cpuswitch.S; every thread runs on the kernel pmap, already live, M6-b2 makes it real); M6-b2: pmap_init (the pmap and pted pools, the console remap, TCR_EL1.T0SZ = 64 - USER_SPACE_BITS and TTBR0 pointed at the empty table: the C's locore did the last two at boot), user pmaps (pmap_create/pinit (three-level), pmap_reference, pmap_destroy/release/vp_destroy, pmap_enter/remove/remove_pted with pmap_pted_pool, the pv lists pmap_enter_pv/remove_pv, pmap_icache_sync_page), pmap_allocate_asid/free_asid over an 8-bit bitmap (pmap_rollover_asid and the 16-bit probe are M7), pmap_activate/deactivate/setttb over the vmspace's pmap (pmap_setpauthkeys M7), pmap_remove_holes (nothing), pmap_proc_iflush through the direct-map alias; every vp table comes from the two-page allocator and goes back page by page (no pmap_vp_pool); M7a-3b: pv_mtx around the pv lists, pmap_page_ro, pmap_page_protect, pmap_protect, pmap_fault_fixup (the R/M emulation), pmap_is_referenced/is_modified/clear_modify/clear_reference; kern_sig.c: the vmmap window is VMMAP_SIZE (1024 pages) below virtual_avail instead of one page, because generic_space_map takes every device mapping from it: with one page the device mappings overlapped kernel_map's first allocations (the first uvm_map of kernel_map, exec_sigcode_map's sigobject, wrote over the GIC); vfs stage 2: pmap_is_modified and pmap_clear_reference are machine::pmap contract methods (the vnode pager and uvm_pagedeactivate use them); M11a: the ASID allocator as in C under pmap_asid_mtx (IPL_HIGH): pmap_find_asid (the old ASID, five random tries with arc4random, then the linear search), pmap_rollover_asid (a new generation, ASID 0 reserved, the ASIDs active on every CPU carried over, cpu_tlb_flush), pmap_allocate_asid/pmap_free_asid locked, ASID 0 marked in use by pmap_bootstrap; pm_asid is an AtomicU64 (the rollover rewrites other CPUs' active pmaps); the TLB invalidations were already the inner-shareable broadcast ones (cpufunc.rs); pmap_setttb runs on the APs through cpu_switchto; pm_mtx/pmap_lock still absent (user pmaps change under the kernel lock in M11a, M11e); M11e: pmap_lock/pmap_unlock/PMAP_ASSERT_LOCKED (pm_mtx, nothing for the kernel pmap) where the C has them: pmap_vp_enter (assert), pmap_enter, pmap_remove, pmap_page_protect, pmap_protect, pmap_fault_fixup, pmap_extract, pmap_unwire; mtx_init in pmap_create; pmap_reference/pmap_destroy atomic; pmap_purge ported, called by uvm_purge through machine::Pmap"
+notes = "pte_desc, the pmapvp tables, kernel pmap, pmap_bootstrap adopting the bootloader's four-level tables (copies of L0 and the kernel slot's L1, TTBR1 switched to them, MAIR indices 2-4), vp lookup/enter/set_l1-3, kvp/kpted allocators over the direct map, pmap_growkernel (populates the first GiB, which the C's pmap_bootstrap does), kenter/kenter_cache/kremove(_pg), fill_pte, pte_insert/update/remove, extract, zero/copy page via the HHDM, pmap_steal_memory (not in the C; OpenBSD arm64 has no direct map nor PMAP_STEAL_MEMORY); pmap_vp_populate and pmap_fault_fixup: M7a; M5-b2: pmap_activate, pmap_deactivate, pmap_setttb (extern C for cpuswitch.S; every thread runs on the kernel pmap, already live, M6-b2 makes it real); M6-b2: pmap_init (the pmap and pted pools, the console remap, TCR_EL1.T0SZ = 64 - USER_SPACE_BITS and TTBR0 pointed at the empty table: the C's locore did the last two at boot), user pmaps (pmap_create/pinit (three-level), pmap_reference, pmap_destroy/release/vp_destroy, pmap_enter/remove/remove_pted with pmap_pted_pool, the pv lists pmap_enter_pv/remove_pv, pmap_icache_sync_page), pmap_allocate_asid/free_asid over an 8-bit bitmap (pmap_rollover_asid and the 16-bit probe are M7), pmap_activate/deactivate/setttb over the vmspace's pmap (pmap_setpauthkeys M7), pmap_remove_holes (nothing), pmap_proc_iflush through the direct-map alias; every vp table comes from the two-page allocator and goes back page by page (no pmap_vp_pool); M7a-3b: pv_mtx around the pv lists, pmap_page_ro, pmap_page_protect, pmap_protect, pmap_fault_fixup (the R/M emulation), pmap_is_referenced/is_modified/clear_modify/clear_reference; kern_sig.c: the vmmap window is VMMAP_SIZE (1024 pages) below virtual_avail instead of one page, because generic_space_map takes every device mapping from it: with one page the device mappings overlapped kernel_map's first allocations (the first uvm_map of kernel_map, exec_sigcode_map's sigobject, wrote over the GIC); vfs stage 2: pmap_is_modified and pmap_clear_reference are machine::pmap contract methods (the vnode pager and uvm_pagedeactivate use them); M11a: the ASID allocator as in C under pmap_asid_mtx (IPL_HIGH): pmap_find_asid (the old ASID, five random tries with arc4random, then the linear search), pmap_rollover_asid (a new generation, ASID 0 reserved, the ASIDs active on every CPU carried over, cpu_tlb_flush), pmap_allocate_asid/pmap_free_asid locked, ASID 0 marked in use by pmap_bootstrap; pm_asid is an AtomicU64 (the rollover rewrites other CPUs' active pmaps); the TLB invalidations were already the inner-shareable broadcast ones (cpufunc.rs); pmap_setttb runs on the APs through cpu_switchto; pm_mtx/pmap_lock still absent (user pmaps change under the kernel lock in M11a, M11e); M11e: pmap_lock/pmap_unlock/PMAP_ASSERT_LOCKED (pm_mtx, nothing for the kernel pmap) where the C has them: pmap_vp_enter (assert), pmap_enter, pmap_remove, pmap_page_protect, pmap_protect, pmap_fault_fixup, pmap_extract, pmap_unwire; mtx_init in pmap_create; pmap_reference/pmap_destroy atomic; pmap_purge ported, called by uvm_purge through machine::Pmap; M16d: pmap_extract answers for the kernel image (whose tables stay the bootloader's) through the image's virtual-to-physical offset initarm records (PMAP_KERNEL_IMAGE_*), as rnd.c's _rs_clearseed needs; the C maps the image with pteds"
 
 [[file]]
 c = "sys/sys/systm.h"
@@ -1202,10 +1202,10 @@ notes = "malloc/free/mallocarray/kmeminit_nkmempages/kmeminit with BUCKETINDX; K
 [[file]]
 c = "sys/dev/rnd.c"
 rust = "sys/dev/rnd.rs"
-status = "wip"
+status = "ported"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "dab962129c685138168b3f689265f4e998e16b40"
-notes = "PLACEHOLDER: arc4random/arc4random_buf/arc4random_uniform over SplitMix64 from a constant seed (not random) so pools and XSIMPLEQ get their cookies; the entropy pool, ChaCha20, rekeying, random_start, the device and the sysctls come with M5; licence is BSD-3 with a GPL alternative, the BSD terms apply; M8: sys_getentropy (GETENTROPY_MAX, explicit_bzero); the syscall generator scans sys/dev for it; M11e: no rndlock; the placeholder state is one atomic word, safe from any CPU"
+notes = "M16d: the whole file: the entropy input ring (rand_event, rnd_event_space, rnd_event_prod/cons, add_event_data, enqueue_randomness with the rnd_cold path and rnd_timeout), add_entropy_words (twisted GFSR, twist_table), dequeue_randomness, extract_entropy (SHA-512 of the pool copy), suspend_randomness/resume_randomness (no caller: subr_suspend.c not ported), the ChaCha20 generator (_rs_init, _rs_seed, _rs_stir, _rs_stir_if_needed, _rs_rekey, _rs_random_buf, _rs_random_u32 under rndlock IPL_HIGH), _rs_clearseed (km_alloc kv_any/kp_none at kd_prefer, pmap_kenter_pa), arc4random, arc4random_buf, arc4random_ctx_new/free/buf (malloc M_TEMP), arc4random_uniform, rnd_init, rnd_reinit (rnd_task on systq, rndreinit_timeout 10 min), random_start (__guard_local warning, clearseed, msgbuf and etext words, good-seed lines), randomopen/close/read/write/kqfilter/ioctl and the filtops (cdevsw 45), sys_getentropy. entropy_pool0 and rs_buf0 in .openbsd.randomdata (PT_OPENBSD_RANDOMIZE in both kernel.ld), read volatile. Deviations: the C's lock-free shared words are Relaxed atomics; add_entropy_words' two statics live in EntropyPool with the pool; extract_entropy hashes block by block; the generator state is a StaticCell under rndlock, which suspend/resume_randomness also take; _rs_clearseed panics on an unmapped seed page; arc4random_ctx_new returns None (callers ENOMEM) if malloc fails. Boot seed: boot(8)/efiboot fills the segment (loadrandom, mdrandom, fwrandom; RB_GOODRANDOM); Limine fills nothing (unported! in sys/stand/mod.rs; random_start prints the C's no-entropy warning). Licence BSD-3 with a GPL alternative, the BSD terms apply (block now verbatim from the pin); host tests (ChaCha keystream vector, rekey/fill, pool mixing, input ring, uniform bound)"
 
 [[file]]
 c = "sys/arch/amd64/include/intrdefs.h"
@@ -1416,7 +1416,7 @@ status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "7703ec138db0f65b7bedc76cdaed1423363db7f0"
 deps = ["sys/uvm/uvm.h", "sys/uvm/uvmexp.h", "sys/uvm/uvm_page.c", "sys/uvm/uvm_pager.c", "sys/uvm/uvm_amap.c", "sys/uvm/uvm_aobj.c", "sys/uvm/uvm_anon.c", "sys/uvm/uvm_map.c", "sys/uvm/uvm_km.c", "sys/uvm/uvm_addr.c"]
-notes = "uvm_init: page system, uvm_map_init, uvm_km_init (kernel_map), uvmfault_init, pmap_init, kmeminit, uvm_pager_init, amap_init, uao_create (kernel swap), uvm_anon_init, the bestfit switch of kernel_map (kmem_map waits for kmeminit's suballoc) run; uvm_km_page_init, dma_alloc_init, uvm_km_page_lateinit and uvm_init_percpu's counters report themselves unported; uvmexp is exported under its C name for the amd64 interrupt stubs' V_INTR; vm_min_kernel_address is a runtime value (amd64 shifts the kernel map above its direct map) and uvm_maxkaddr is raised to it before uvm_km_init; M11a: uvm_init_percpu calls uvm_anon_init_percpu; uvmexp_counters stay static atomics, so counters_alloc_ncpus (now in subr_percpu.rs) is not called: a deviation, no longer reported"
+notes = "uvm_init: page system, uvm_map_init, uvm_km_init (kernel_map), uvmfault_init, pmap_init, kmeminit, uvm_pager_init, amap_init, uao_create (kernel swap), uvm_anon_init, the bestfit switch of kernel_map (kmem_map waits for kmeminit's suballoc) run; uvm_km_page_init, uvm_km_page_lateinit and uvm_init_percpu's counters report themselves unported; uvmexp is exported under its C name for the amd64 interrupt stubs' V_INTR; vm_min_kernel_address is a runtime value (amd64 shifts the kernel map above its direct map) and uvm_maxkaddr is raised to it before uvm_km_init; M11a: uvm_init_percpu calls uvm_anon_init_percpu; uvmexp_counters stay static atomics, so counters_alloc_ncpus (now in subr_percpu.rs) is not called: a deviation, no longer reported; M16d: dma_alloc_init runs (kern/dma_alloc.rs)"
 
 [[file]]
 c = "sys/uvm/uvm_io.c"
@@ -1547,7 +1547,7 @@ status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "c01e81af04eb6552aa6ffc398ea93a75fc2e1857"
 deps = ["sys/arch/amd64/include/intrdefs.h", "sys/arch/amd64/include/tss.h", "sys/arch/amd64/include/pmap.h"]
-notes = "M4: struct cpu_info (the fields the trap and interrupt paths use, in C order, Cells; ci_isources, ci_ipending as an AtomicU64 the stubs and softintr share), ci_PAGEALIGN, CPUPF_*, CPUF_*, CI_DDB_*, curcpu (%%gs:ci_self), cpu_number, cpu_info_primary, CPU_IS_PRIMARY/RUNNING; the CPU identification fields, the scheduler state, the sensors, vmm, CTL_MACHDEP and the cpu_functions come with M4-b2 to M6; M5: ci_schedstate, ci_queue, MAXCPUS (1), CPU_INFO_UNIT (0 until struct device), struct clockframe = intrframe, CLKF_USERMODE/PC/INTR; M5-b1: ci_curproc/ci_curpcb/ci_idle_pcb typed; M7a-3b: PROC_PC/PROC_STACK through Cpu::proc_pc/proc_stack; M8: need_proftick (aston) behind machine::cpu; TSC: enum cpu_vendor (CpuVendor) and ci_vendor, ci_cpuid_level, ci_feature_flags, ci_feature_eflags, ci_pnfeatset, ci_efeature_eax/ecx, ci_brand, ci_signature, ci_family, ci_model; M11a (contract): MAXCPUS 255 with MULTIPROCESSOR; M11a: ci_func (struct cpu_functions), CPU_STARTUP/CPU_START_CLEANUP (cpu_startup_ci/cpu_start_cleanup), CPU_BUSY_CYCLE (pause with MULTIPROCESSOR), CPU_INFO_UNIT over ci_dev->dv_unit; the fields other CPUs write are atomics: ci_want_resched (AtomicI32), ci_proc_pmap (AtomicPtr, read by the shootdowns), with ci_flags/ci_ipis; the [I] fields are written by the boot CPU before the CPU runs, ordered by the CPUF_GO release; M11c: ci_ddb_paused is an AtomicI32 (volatile, written by the CPUs entering and leaving ddb); M16e: ci_feature_tpmflags, ci_acpicpudev (AtomicPtr), ci_mwait (AtomicU32), MWAIT_IN_IDLE/KEEP_IDLING/ONLY/IDLING"
+notes = "M4: struct cpu_info (the fields the trap and interrupt paths use, in C order, Cells; ci_isources, ci_ipending as an AtomicU64 the stubs and softintr share), ci_PAGEALIGN, CPUPF_*, CPUF_*, CI_DDB_*, curcpu (%%gs:ci_self), cpu_number, cpu_info_primary, CPU_IS_PRIMARY/RUNNING; the CPU identification fields, the scheduler state, the sensors, vmm, CTL_MACHDEP and the cpu_functions come with M4-b2 to M6; M5: ci_schedstate, ci_queue, MAXCPUS (1), CPU_INFO_UNIT (0 until struct device), struct clockframe = intrframe, CLKF_USERMODE/PC/INTR; M5-b1: ci_curproc/ci_curpcb/ci_idle_pcb typed; M7a-3b: PROC_PC/PROC_STACK through Cpu::proc_pc/proc_stack; M8: need_proftick (aston) behind machine::cpu; TSC: enum cpu_vendor (CpuVendor) and ci_vendor, ci_cpuid_level, ci_feature_flags, ci_feature_eflags, ci_pnfeatset, ci_efeature_eax/ecx, ci_brand, ci_signature, ci_family, ci_model; M11a (contract): MAXCPUS 255 with MULTIPROCESSOR; M11a: ci_func (struct cpu_functions), CPU_STARTUP/CPU_START_CLEANUP (cpu_startup_ci/cpu_start_cleanup), CPU_BUSY_CYCLE (pause with MULTIPROCESSOR), CPU_INFO_UNIT over ci_dev->dv_unit; the fields other CPUs write are atomics: ci_want_resched (AtomicI32), ci_proc_pmap (AtomicPtr, read by the shootdowns), with ci_flags/ci_ipis; the [I] fields are written by the boot CPU before the CPU runs, ordered by the CPUF_GO release; M11c: ci_ddb_paused is an AtomicI32 (volatile, written by the CPUs entering and leaving ddb); M16e: ci_feature_tpmflags, ci_acpicpudev (AtomicPtr), ci_mwait (AtomicU32), MWAIT_IN_IDLE/KEEP_IDLING/ONLY/IDLING; M16d: cpu_rnd_messybits (rdtsc's halves XORed), machine::Cpu::cpu_rnd_messybits"
 
 [[file]]
 c = "sys/arch/amd64/include/cpu_full.h"
@@ -1573,7 +1573,7 @@ status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "ab3adcd7f2fef559012a5d987d7cc75826808282"
 deps = ["sys/arch/amd64/include/cpu_full.h", "sys/arch/amd64/include/specialreg.h", "sys/arch/amd64/include/psl.h"]
-notes = "M4: cpu_info_full_primary (its static initialiser is cpu_info_primary_init), cpu_info_list, cpu_init_msrs (MSR_STAR/LSTAR/CSTAR/SFMASK as in C and EFER.SCE, which the C's locore0 sets at boot; patinit reported), cpu_enter_pages (the TSS stacks; pmap_enter_special is M6); identifycpu, cpu_match/cpu_attach, cpu_init, cpu_boot_secondary, cpu_hatch, the MDS/TSX/ucode work are M4-b to M6; M7b: struct cpu_softc, cpu_ca/cpu_cd (CD_COCOVM, no cpu_activate), cpu_match (name and MAXCPUS; the SEV-ES check only concerns units MAXCPUS already refuses), cpu_attach for CPU_ROLE_SP and CPU_ROLE_BP (ci_self, sc_info, ci_dev, the ids, ci_handled_intr_level, the CPUF_* flags, cpu_intr_init; BP: lapic_enable and lapic_calibrate_timer); identifycpu, cpu_fix_msrs, mem_range_attach, cpu_init, cpu_init_mwait and cpu_init_vmm reported, an AP is reported (no km_alloc'd cpu_info_full without MULTIPROCESSOR); M8: cpu_init (CR4_DEFAULT with OSFXSR/OSXMMEXCPT, fpu_cleandata from the initial control words through xrstor_user/fpusave; SMEP/SMAP/UMIP/PKE/PCIDE and the XSAVE setup reported: they need identifycpu), called from cpu_attach for SP/BP; TSC: cpuid_level, cpu_vendor (StaticCell, written by init_x86_64), cpu_id, cpu_ebxfeature, cpu_ecxfeature, cpu_feature, ecpu_ecxfeature; cpu_attach calls identifycpu (cpu_fix_msrs and mem_range_attach still reported); M11a (MULTIPROCESSOR): cpu_info[], mp_cpu_funcs (mp_cpu_start is BootMp::start, mptramp.S replaced-by-limine; mp_cpu_start_cleanup has no NVRAM byte), the AP's cpu_attach (km_alloc'd cpu_info_full, idle pcb, sched_init_cpu, ncpus, cpu_info_list), cpu_boot_secondary_processors, cpu_start_secondary, cpu_boot_secondary, cpu_hatch (cpu_hatch_entry does mptramp.S's cpu_spinup_finish), cpu_init's CPUF_RUNNING and TLB flush, wbinvd_on_all_cpus; feature qemu: x86_ipi_selftest after cpu_boot_secondary_processors; M11b: tsc_test_sync_bp (cpu_start_secondary; cpu_boot_secondary while cold) and tsc_test_sync_ap (cpu_hatch; cpu_init while cold) run as in C; feature qemu: a verdict line per AP after the test (tsc.c's tsc_report_verdict); still reported: cpu_ucode_apply, cpu_tsx_disable, cpu_fix_msrs, mem_range_attach, cpu_init_mwait, cpu_init_vmm, patinit; M13: ioapic_bsp_id set by the CPU_ROLE_BP attach (NIOAPIC > 0); M14 (A2): after a boot by boot(8) the C's mp_cpu_start (NVRAM_RESET_JUMP, the 40:67 warm reset vector written through the direct map, INIT, two STARTUP IPIs to MP_TRAMPOLINE) is the BootMp::start of mp_madt_cpus (the enabled LAPIC/x2APIC entries of the MADT, standing for acpimadt0), cpu_start_secondary maps and unmaps the trampoline pages, mp_cpu_start_cleanup restores NVRAM_RESET_RST, and the processor enters cpu_hatch from mptramp.S's cpu_spinup_finish; under Limine as before; M16e: cpu_mwait_size, cpu_mwait_states, cpu_idle_mwait_cycle and cpu_init_mwait (called from cpu_attach for SP and BP, as in C; nothing under QEMU's qemu64, which has no MONITOR)"
+notes = "M4: cpu_info_full_primary (its static initialiser is cpu_info_primary_init), cpu_info_list, cpu_init_msrs (MSR_STAR/LSTAR/CSTAR/SFMASK as in C and EFER.SCE, which the C's locore0 sets at boot; patinit reported), cpu_enter_pages (the TSS stacks; pmap_enter_special is M6); identifycpu, cpu_match/cpu_attach, cpu_init, cpu_boot_secondary, cpu_hatch, the MDS/TSX/ucode work are M4-b to M6; M7b: struct cpu_softc, cpu_ca/cpu_cd (CD_COCOVM, no cpu_activate), cpu_match (name and MAXCPUS; the SEV-ES check only concerns units MAXCPUS already refuses), cpu_attach for CPU_ROLE_SP and CPU_ROLE_BP (ci_self, sc_info, ci_dev, the ids, ci_handled_intr_level, the CPUF_* flags, cpu_intr_init; BP: lapic_enable and lapic_calibrate_timer); identifycpu, cpu_fix_msrs, mem_range_attach, cpu_init, cpu_init_mwait and cpu_init_vmm reported, an AP is reported (no km_alloc'd cpu_info_full without MULTIPROCESSOR); M8: cpu_init (CR4_DEFAULT with OSFXSR/OSXMMEXCPT, fpu_cleandata from the initial control words through xrstor_user/fpusave; SMEP/SMAP/UMIP/PKE/PCIDE and the XSAVE setup reported: they need identifycpu), called from cpu_attach for SP/BP; TSC: cpuid_level, cpu_vendor (StaticCell, written by init_x86_64), cpu_id, cpu_ebxfeature, cpu_ecxfeature, cpu_feature, ecpu_ecxfeature; cpu_attach calls identifycpu (cpu_fix_msrs and mem_range_attach still reported); M11a (MULTIPROCESSOR): cpu_info[], mp_cpu_funcs (mp_cpu_start is BootMp::start, mptramp.S replaced-by-limine; mp_cpu_start_cleanup has no NVRAM byte), the AP's cpu_attach (km_alloc'd cpu_info_full, idle pcb, sched_init_cpu, ncpus, cpu_info_list), cpu_boot_secondary_processors, cpu_start_secondary, cpu_boot_secondary, cpu_hatch (cpu_hatch_entry does mptramp.S's cpu_spinup_finish), cpu_init's CPUF_RUNNING and TLB flush, wbinvd_on_all_cpus; feature qemu: x86_ipi_selftest after cpu_boot_secondary_processors; M11b: tsc_test_sync_bp (cpu_start_secondary; cpu_boot_secondary while cold) and tsc_test_sync_ap (cpu_hatch; cpu_init while cold) run as in C; feature qemu: a verdict line per AP after the test (tsc.c's tsc_report_verdict); still reported: cpu_ucode_apply, cpu_tsx_disable, cpu_fix_msrs, mem_range_attach, cpu_init_mwait, cpu_init_vmm, patinit; M13: ioapic_bsp_id set by the CPU_ROLE_BP attach (NIOAPIC > 0); M14 (A2): after a boot by boot(8) the C's mp_cpu_start (NVRAM_RESET_JUMP, the 40:67 warm reset vector written through the direct map, INIT, two STARTUP IPIs to MP_TRAMPOLINE) is the BootMp::start of mp_madt_cpus (the enabled LAPIC/x2APIC entries of the MADT, standing for acpimadt0), cpu_start_secondary maps and unmaps the trampoline pages, mp_cpu_start_cleanup restores NVRAM_RESET_RST, and the processor enters cpu_hatch from mptramp.S's cpu_spinup_finish; under Limine as before; M16e: cpu_mwait_size, cpu_mwait_states, cpu_idle_mwait_cycle and cpu_init_mwait (called from cpu_attach for SP and BP, as in C; nothing under QEMU's qemu64, which has no MONITOR); M16d: rdrand and rdrand_tmo (RDSEED, else RDRAND, XORed with the TSC, two enqueue_randomness every 10 ms; the sample is 0 where the C reads an uninitialised one)"
 [[file]]
 c = "sys/arch/amd64/amd64/identcpu.c"
 rust = "sys/arch/amd64/amd64/identcpu.rs"
@@ -1581,7 +1581,7 @@ status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "63f611e1b942019598f7a4cd30f68ca274adb522"
 deps = ["sys/arch/amd64/amd64/cpu.c", "sys/arch/amd64/include/cpu.h", "sys/arch/amd64/include/specialreg.h"]
-notes = "BSD-4 (Wasabi, accepted at M2). TSC part: cpu_model, cpuspeed, cpu_amd64speed (installed as cpu_cpuspeed), cpu_freq_ctr, cpu_freq, identifycpu's CPUID reads (0x80000000, 0x80000001, signature and features, brand string with the space compaction, family/model), CPUF_CONST_TSC/CPUF_INVAR_TSC and tsc_identify, the frequency, the cpu0 line (model, MHz, fam-model-step, patch level), leaf 7 ebx, tsc_timecounter_init. Deviation: under feature qemu CONST_TSC and INVAR_TSC are set whenever cpuid(1) has CPUID_TSC (QEMU's TCG never exposes invtsc; the user's decision of 2026-10-04). Reported unported: pcpuid/pbitdiff/print_perf_cpuid, leaf 7 ecx/edx and sub-leaf 2, leaves 6/0xd/0x80000008/0x8000001f, replacemeltdown, x86_print_cacheinfo, setperf_setup, has_rdrand/has_rdseed, replacesmap, the sensors, via_nano_setup, cpu_topology, mask_width, cpu_check_vmm_cap; pvbus_identify (NPVBUS) not configured; hw.model still reported by kern_sysctl; M11a: with MULTIPROCESSOR each application processor identifies itself from cpu_hatch (the AP branch: cpuid(1) re-read, cpu_feature/cpu_ecxfeature intersected; its cpuN line); the MULTIPROCESSOR prevcpu_* state of the feature printing goes with pcpuid, reported; M16e: cpuid 6 %eax into ci_feature_tpmflags (and TPM_ARAT for AMD family >= 0x12); %ecx only feeds the unported feature printing"
+notes = "BSD-4 (Wasabi, accepted at M2). TSC part: cpu_model, cpuspeed, cpu_amd64speed (installed as cpu_cpuspeed), cpu_freq_ctr, cpu_freq, identifycpu's CPUID reads (0x80000000, 0x80000001, signature and features, brand string with the space compaction, family/model), CPUF_CONST_TSC/CPUF_INVAR_TSC and tsc_identify, the frequency, the cpu0 line (model, MHz, fam-model-step, patch level), leaf 7 ebx, tsc_timecounter_init. Deviation: under feature qemu CONST_TSC and INVAR_TSC are set whenever cpuid(1) has CPUID_TSC (QEMU's TCG never exposes invtsc; the user's decision of 2026-10-04). Reported unported: pcpuid/pbitdiff/print_perf_cpuid, leaf 7 ecx/edx and sub-leaf 2, leaves 6/0xd/0x80000008/0x8000001f, replacemeltdown, x86_print_cacheinfo, setperf_setup, has_rdrand/has_rdseed, replacesmap, the sensors, via_nano_setup, cpu_topology, mask_width, cpu_check_vmm_cap; pvbus_identify (NPVBUS) not configured; hw.model still reported by kern_sysctl; M11a: with MULTIPROCESSOR each application processor identifies itself from cpu_hatch (the AP branch: cpuid(1) re-read, cpu_feature/cpu_ecxfeature intersected; its cpuN line); the MULTIPROCESSOR prevcpu_* state of the feature printing goes with pcpuid, reported; M16e: cpuid 6 %eax into ci_feature_tpmflags (and TPM_ARAT for AMD family >= 0x12); %ecx only feeds the unported feature printing; M16d: has_rdrand/has_rdseed (HAS_RDRAND, HAS_RDSEED) set on the primary CPU"
 
 [[file]]
 c = "sys/arch/amd64/amd64/tsc.c"
@@ -2006,6 +2006,15 @@ upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "dd371c336ccf71c0cefae173d992cd79f2e33be4"
 deps = ["sys/sys/time.h"]
 notes = "M8: clock_ymdhms_to_secs, clock_secs_to_ymdhms (returns the ClockYmdhms), leapyear and the month table; i64 day count (the C's int overflows past year 6000), a month above 12 adds no days; host tests: known dates, 1970 to 2105 round trip"
+
+[[file]]
+c = "sys/kern/dma_alloc.c"
+rust = "sys/kern/dma_alloc.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "08e5e56ca0476e095b2fe07d4e0982a69882a259"
+deps = ["sys/kern/subr_pool.c"]
+notes = "M16d: the whole file, for viornd(4) and viomb(4): dmapools (dma16 .. dma65536 on kp_dma_contig), dma_alloc_init (called by uvm_init after kmeminit, replacing its unported! report), dma_alloc_index, dma_alloc, dma_free; deviations: dmanames is a compile-time table of &'static str (pool_init keeps the name), dma_alloc_index returns Option, dma_alloc Option<NonNull<u8>>; the earlier ports that stood in malloc(9) for it (scsiconf, scsi_ioctl, atascsi, ahci, sd, cd, softraid_crypto) keep their notes; host tests (bucket choice, names, a PR_ZERO item round trip)"
 
 [[file]]
 c = "sys/sys/poll.h"
@@ -2890,7 +2899,7 @@ status = "ported"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "04118eee34ad45e0c0fc409186e9471356f83470"
 deps = ["sys/sys/exec.h", "sys/uvm/uvm_map.c", "sys/dev/rnd.c", "sys/kern/kern_malloc.c"]
-notes = "M8: exec_process_vmcmds, vmcmd_map_pagedvn (uvn_attach and a copy-on-write uvm_map of the vnode's object, pgo_detach on failure), vmcmd_map_readvn (vn_rdwr UIO_USERSPACE into an anonymous overlay mapping), vmcmd_map_zero, vmcmd_mutable, vmcmd_randomize (no private arc4random_ctx), exec_setup_stack (lim_cur(RLIMIT_STACK), VM_MIN_STACK_ADDRESS randomisation); new_vmcmd (vref)/vmcmdset_extend/kill_vmcmds (vrele) are ExecVmcmdSet in sys/exec.rs; for the init boot module (ExecFile::Image) pagedvn/readvn copy the image's bytes out instead; 4-clause licence accepted at M2"
+notes = "M8: exec_process_vmcmds, vmcmd_map_pagedvn (uvn_attach and a copy-on-write uvm_map of the vnode's object, pgo_detach on failure), vmcmd_map_readvn (vn_rdwr UIO_USERSPACE into an anonymous overlay mapping), vmcmd_map_zero, vmcmd_mutable, vmcmd_randomize (M16d: a private arc4random_ctx past RANDOMIZE_CTX_THRESHOLD, as in C; ENOMEM if it gets no memory), exec_setup_stack (lim_cur(RLIMIT_STACK), VM_MIN_STACK_ADDRESS randomisation); new_vmcmd (vref)/vmcmdset_extend/kill_vmcmds (vrele) are ExecVmcmdSet in sys/exec.rs; for the init boot module (ExecFile::Image) pagedvn/readvn copy the image's bytes out instead; 4-clause licence accepted at M2"
 
 [[file]]
 c = "sys/kern/kern_exec.c"
@@ -4764,7 +4773,7 @@ rust = "sys/dev/pci/pcidevs.rs"
 status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "8f85c9d2744407eba39360fa2892e4bd178abdd8"
-notes = "generated by devlist2h.awk from sys/dev/pci/pcidevs (BSD-4-clause, Demetriou, accepted at M2; 350 vendors, 9600 products, 640 KB). M7b: only the IDs ported code names (PCI_VENDOR_OPENBSD/CIRRUS/AMD/QUMRANET/INTEL/INVALID, the three AMD xHCI products pci_set_powerstate knows, PCI_PRODUCT_CIRRUS_CL_PD6729, PCI_PRODUCT_INTEL_82371FB_ISA, PCI_PRODUCT_OPENBSD_CONTROL for virtio_pci), as u32, added by hand; the rest waits for a devlist2h-like generator in tools/xtask; reference-backed test; M13a: PCI_VENDOR_APPLE and PCI_PRODUCT_APPLE_NVME1/2/3 (nvme_pci.c); M12: PCI_VENDOR_FRESCO, PCI_PRODUCT_FRESCO_FL1000, PCI_PRODUCT_FRESCO_FL1400 (xhci_pci's MSI quirk); M12 auich: the AC97 controllers auich.c names (PCI_VENDOR_SIS, PCI_VENDOR_NVIDIA and the 22 PCI_PRODUCT_*_ACA/AC97 IDs of Intel, SiS, NVIDIA and AMD); M12 (azalia): PCI_VENDOR_DELL and PCI_VENDOR_HP (azalia_codec.c's subsystem checks) and the 79 HD Audio controller products azalia.c names (ATI SB450/SBx00, AMD 15h/17h/Hudson-2, NVIDIA MCP51..MCP89, Intel 82801FB..PTL), in the reference-backed test; M13 (ahci): PCI_VENDOR_ATI/ASMEDIA/SAMSUNG2/VIATECH/ZHAOXIN and the 37 products of ahci_pci.c's ahci_devices[]; M13 (siop): PCI_VENDOR_SYMBIOS and the 14 PCI_PRODUCT_SYMBIOS_* products siop_pci_common.c names, in the reference-backed test; M13 (puc): the 213 vendors and products pucdata.c and puc.c name (PCI_VENDOR_EXAR, PCI_PRODUCT_EXAR_XR17V352/354, Red Hat's three PCI_PRODUCT_REDHAT_SERIAL*, ...; their own reference-backed test); M13 (em): the 198 Intel ids of if_em.c's em_devices[], in its order, with a reference-backed test; M13 (vmx): PCI_VENDOR_VMWARE and PCI_PRODUCT_VMWARE_NET_3 (if_vmx.c's vmx_devices[]), in the reference-backed test; M13 (vga): PCI_PRODUCT_INTEL_US15W_IGD, US15L_IGD, GMA600_0, GMA600_8, MDFLD_IGD_0, GMA3600_0 (vga_pci.c's vga_devs[]), in the reference-backed test; M14 (arm64 acpipci): PCI_VENDOR_QUALCOMM, PCI_PRODUCT_QUALCOMM_SC8280XP_PCIE (the swizzle quirk), in the reference-backed test; M16a (mpi): the 22 PCI_PRODUCT_SYMBIOS_* products mpi_pci.c names (1030, SAS1064..SAS1066, FC909..FC949E), in their own reference-backed test; M16e (ichiic, piixpm): PCI_VENDOR_RCC, PCI_VENDOR_SMSC and the 76 SMBus and power-management products ichiic.c and piixpm.c name (inserted before PCI_VENDOR_ATI), in their own reference-backed test; M16a (sdhc_pci): PCI_PRODUCT_REALTEK_RTS5209, PCI_VENDOR_RICOH with PCI_PRODUCT_RICOH_R5U822/R5U823, PCI_VENDOR_TI with PCI_PRODUCT_TI_PCI7XX1_FLASH/SD, PCI_VENDOR_ENE with PCI_PRODUCT_ENE_SDCARD, PCI_VENDOR_GENESYS with PCI_PRODUCT_GENESYS_GL9755, in their own reference-backed test"
+notes = "generated by devlist2h.awk from sys/dev/pci/pcidevs (BSD-4-clause, Demetriou, accepted at M2; 350 vendors, 9600 products, 640 KB). M7b: only the IDs ported code names (PCI_VENDOR_OPENBSD/CIRRUS/AMD/QUMRANET/INTEL/INVALID, the three AMD xHCI products pci_set_powerstate knows, PCI_PRODUCT_CIRRUS_CL_PD6729, PCI_PRODUCT_INTEL_82371FB_ISA, PCI_PRODUCT_OPENBSD_CONTROL for virtio_pci), as u32, added by hand; the rest waits for a devlist2h-like generator in tools/xtask; reference-backed test; M13a: PCI_VENDOR_APPLE and PCI_PRODUCT_APPLE_NVME1/2/3 (nvme_pci.c); M12: PCI_VENDOR_FRESCO, PCI_PRODUCT_FRESCO_FL1000, PCI_PRODUCT_FRESCO_FL1400 (xhci_pci's MSI quirk); M12 auich: the AC97 controllers auich.c names (PCI_VENDOR_SIS, PCI_VENDOR_NVIDIA and the 22 PCI_PRODUCT_*_ACA/AC97 IDs of Intel, SiS, NVIDIA and AMD); M12 (azalia): PCI_VENDOR_DELL and PCI_VENDOR_HP (azalia_codec.c's subsystem checks) and the 79 HD Audio controller products azalia.c names (ATI SB450/SBx00, AMD 15h/17h/Hudson-2, NVIDIA MCP51..MCP89, Intel 82801FB..PTL), in the reference-backed test; M13 (ahci): PCI_VENDOR_ATI/ASMEDIA/SAMSUNG2/VIATECH/ZHAOXIN and the 37 products of ahci_pci.c's ahci_devices[]; M13 (siop): PCI_VENDOR_SYMBIOS and the 14 PCI_PRODUCT_SYMBIOS_* products siop_pci_common.c names, in the reference-backed test; M13 (puc): the 213 vendors and products pucdata.c and puc.c name (PCI_VENDOR_EXAR, PCI_PRODUCT_EXAR_XR17V352/354, Red Hat's three PCI_PRODUCT_REDHAT_SERIAL*, ...; their own reference-backed test); M13 (em): the 198 Intel ids of if_em.c's em_devices[], in its order, with a reference-backed test; M13 (vmx): PCI_VENDOR_VMWARE and PCI_PRODUCT_VMWARE_NET_3 (if_vmx.c's vmx_devices[]), in the reference-backed test; M13 (vga): PCI_PRODUCT_INTEL_US15W_IGD, US15L_IGD, GMA600_0, GMA600_8, MDFLD_IGD_0, GMA3600_0 (vga_pci.c's vga_devs[]), in the reference-backed test; M14 (arm64 acpipci): PCI_VENDOR_QUALCOMM, PCI_PRODUCT_QUALCOMM_SC8280XP_PCIE (the swizzle quirk), in the reference-backed test; M16a (mpi): the 22 PCI_PRODUCT_SYMBIOS_* products mpi_pci.c names (1030, SAS1064..SAS1066, FC909..FC949E), in their own reference-backed test; M16e (ichiic, piixpm): PCI_VENDOR_RCC, PCI_VENDOR_SMSC and the 76 SMBus and power-management products ichiic.c and piixpm.c name (inserted before PCI_VENDOR_ATI), in their own reference-backed test; M16a (sdhc_pci): PCI_PRODUCT_REALTEK_RTS5209, PCI_VENDOR_RICOH with PCI_PRODUCT_RICOH_R5U822/R5U823, PCI_VENDOR_TI with PCI_PRODUCT_TI_PCI7XX1_FLASH/SD, PCI_VENDOR_ENE with PCI_PRODUCT_ENE_SDCARD, PCI_VENDOR_GENESYS with PCI_PRODUCT_GENESYS_GL9755, in their own reference-backed test; M16a (pciide): the 305 vendor and product IDs pciide.c's chip table and chip maps name that were missing, appended in one block, in their own reference-backed test"
 
 [[file]]
 c = "sys/dev/pci/pcidevs_data.h"
@@ -5236,6 +5245,15 @@ deps = ["sys/arch/amd64/include/pci_machdep.h", "sys/arch/amd64/include/i82093va
 notes = "BSD-4-clause block (Hannum), accepted at M2. M7b: pci_mcfg_addr/min/max_bus (atomics), pci_mcfgt/pci_mcfgh (StaticCells), pci_conf_lock (IPL_HIGH mutex), PCI_MODE1_*, pci_bus_dma_tag, pci_mcfg_init, pci_lookup_segment, pci_attach_hook, pci_bus_maxdevs, pci_make_tag, pci_decompose_tag (tuple), pci_conf_size, pci_mcfg_map_bus, pci_conf_read, pci_conf_write (mechanism #1 at 0xcf8/0xcfc; ECAM when pci_mcfg_init named a window), pci_msix_table_map/unmap, PCI_MSI_VEC/TAG/PIN, msi_pic and msi_hwmask/hwunmask (the C's MSI-X lookup kept)/addroute/delroute/allocidtvec, pci_intr_enable_msivec, pci_intr_map_msi, pci_intr_map_msivec, msix_pic and msix_hwmask/hwunmask/addroute/delroute, pci_intr_map_msix, pci_intr_map (the firmware's line, 8259), pci_intr_string (by value), pci_intr_establish, pci_intr_establish_cpu, pci_intr_disestablish, pci_probe_device_hook, pci_dev_postattach, pci_min_powerstate, pci_set_powerstate_md (the NACPI > 0 bodies since M13: acpi_pci_match, acpi_pci_min_powerstate, acpi_pci_set_powerstate); mp_busses is NULL (mpbios.c/acpimadt.c not ported): the MSI maps refuse, as the C does without tables; msi_pic/msix_pic have no ioapic_edge_stubs (vector.S I/O APIC half) so an MSI establish is reported; ioapic_find reported (APIC_INT_VIA_APIC handles); memory-space bus_space_map (ECAM, MSI-X tables) works since bus_space.c's memory half (M7b, virtio); PCI_MSI_PER_BRIDGE is true (the x86 MSI lists virtio_pci overrides); reported: pci_init_extents (subr_extent.c, bios_memmap), acpiprt_route_interrupt/acpidmar_pci_hook left as comments; M13: mp_busses comes from acpimadt: pci_intr_map's bus and bridge (swizzle) lookups and its ISA fallback with the 'no MP mapping found' complaint, pci_intr_establish_cpu's acpiprt_route_interrupt and ioapic_find path (pin, legacy irq or -1), msi_pic/msix_pic with ioapic_edge_stubs: MSI/MSI-X work with PCI_FLAGS_MSI_ENABLED (acpipci); M16e: pci_probe_device_hook calls acpidmar_pci_hook (NACPIDMAR > 0)"
 
 [[file]]
+c = "sys/arch/amd64/pci/pciide_machdep.c"
+rust = "sys/arch/amd64/pci/pciide_machdep.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "08ce9787ca2e2d9f4fd9021b75d0a83a29a12e1f"
+deps = ["sys/arch/amd64/isa/isa_machdep.c", "sys/dev/pci/pciidereg.h"]
+notes = "M16a: the whole file: pciide_machdep_compat_intr_establish (ISA IRQ 14/15, IST_EDGE, IPL_BIO, named after the device) and pciide_machdep_compat_intr_disestablish, reached by pciide.c through machine::pciide_machdep (trait PciideMachdep; arm64, which has no pciide_machdep.c and no ISA bus, and the host establish nothing)"
+
+[[file]]
 c = "sys/arch/arm64/include/pci_machdep.h"
 rust = "sys/arch/arm64/include/pci_machdep.rs"
 status = "ported"
@@ -5616,7 +5634,7 @@ status = "ported"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "a239133825b3a31f6e7fc41fc6aebe446f76ec82"
 deps = ["sys/sys/conf.h", "sys/scsi/sd.c", "sys/scsi/cd.c", "sys/dev/vnd.c", "sys/dev/bio.c"]
-notes = "bdevsw[] (19 slots) and cdevsw[] (101 slots) at the C's major numbers, as Devsw tables of Cells behind machine::conf; the drivers present: cn 0, ctty 1, mm 2, pts 5, ptc 6, com 8 (NCOM 1, taken over by pluartdev at boot through cdevsw_set: the C's KLUDGE), filedesc 22, ptm 81; M8: rd 17 (bdev_disk_init) and 47 (cdev_disk_init), NRD 1; every other slot is cdev_notdef()/bdev_notdef() until its driver is ported; mem_no, chrtoblktbl[], swapdev, iskmemdev, iszerodev, getnulldev; findblkmajor/dev_rawpart (dk_mountroot) are not used; M9d: cdevsw 73 is pf (cdev_pf_init); M10a: sd 4 (bdev_disk_init) and 13 (cdev_disk_init), NSD 1 (scsi/sd.rs); M13: cd 6 (bdev_disk_init) and 15 (cdev_disk_init), NCD 1 (scsi/cd.rs); M10c: vnd 14 (bdev_disk_init) and 41 (cdev_disk_init), NVND 4 (dev/vnd.rs); M10f: cdevsw 79 is bio (cdev_bio_init, NBIO 1; dev/bio.rs) M10d: cdevsw 92 is cdev_fuse_init(NFUSE, fuse) under feature fuse (cnotdef without it).; M12: cdevsw 61 is usb (cdev_usb_init: usbopen, usbclose, usbioctl); M12: cdevsw 42 is audio (cdev_audio_init: open, close, read, write, ioctl, kqfilter); M14: cdevsw 90 is diskmap (cdev_disk_init(1, diskmap), dev/diskmap.rs); M13: cdevsw 12 is wsdisplay (cdev_wsdisplay_init, NWSDISPLAY 1: wsdisplayopen .. wsdisplaykqfilter, dev/wscons/wsdisplay.rs); M13 (wskbd): wskbd 67 and wsmux 69 (cdev_mouse_init, NWSKBD/NWSMUX 1)"
+notes = "bdevsw[] (19 slots) and cdevsw[] (101 slots) at the C's major numbers, as Devsw tables of Cells behind machine::conf; the drivers present: cn 0, ctty 1, mm 2, pts 5, ptc 6, com 8 (NCOM 1, taken over by pluartdev at boot through cdevsw_set: the C's KLUDGE), filedesc 22, ptm 81; M8: rd 17 (bdev_disk_init) and 47 (cdev_disk_init), NRD 1; every other slot is cdev_notdef()/bdev_notdef() until its driver is ported; mem_no, chrtoblktbl[], swapdev, iskmemdev, iszerodev, getnulldev; findblkmajor/dev_rawpart (dk_mountroot) are not used; M9d: cdevsw 73 is pf (cdev_pf_init); M10a: sd 4 (bdev_disk_init) and 13 (cdev_disk_init), NSD 1 (scsi/sd.rs); M13: cd 6 (bdev_disk_init) and 15 (cdev_disk_init), NCD 1 (scsi/cd.rs); M10c: vnd 14 (bdev_disk_init) and 41 (cdev_disk_init), NVND 4 (dev/vnd.rs); M10f: cdevsw 79 is bio (cdev_bio_init, NBIO 1; dev/bio.rs) M10d: cdevsw 92 is cdev_fuse_init(NFUSE, fuse) under feature fuse (cnotdef without it).; M12: cdevsw 61 is usb (cdev_usb_init: usbopen, usbclose, usbioctl); M12: cdevsw 42 is audio (cdev_audio_init: open, close, read, write, ioctl, kqfilter); M14: cdevsw 90 is diskmap (cdev_disk_init(1, diskmap), dev/diskmap.rs); M13: cdevsw 12 is wsdisplay (cdev_wsdisplay_init, NWSDISPLAY 1: wsdisplayopen .. wsdisplaykqfilter, dev/wscons/wsdisplay.rs); M13 (wskbd): wskbd 67 and wsmux 69 (cdev_mouse_init, NWSKBD/NWSMUX 1); M16d: cdevsw 45 is random (cdev_random_init(1, random): randomopen .. randomkqfilter, dev/rnd.rs)"
 
 [[file]]
 c = "sys/arch/arm64/arm64/mem.c"
@@ -10557,193 +10575,294 @@ notes = "M16a: the whole driver but B_FORMAT (not defined: wdformat), WD_DUMP_NO
 [[file]]
 c = "sys/dev/pci/pciidereg.h"
 rust = "sys/dev/pci/pciidereg.rs"
-status = "todo"
-notes = "M16: PCI IDE class registers (bus-master DMA, native/compat)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "59c3914cc7a2d5687f22ca7de1f216c5c6071bf8"
+notes = "M16a: the whole header: PCIIDE_NUM_CHANNELS, the PCIIDE_REG_*/INTERFACE_*/CHAN_EN/COMPAT_* macros as const fns (config offsets i32, compat addresses BusAddr), PCIIDE_CHANNEL_NAME (&'static str), the IDEDMA_* bus master registers (offsets BusSize, the 8-bit register bits u8), struct idedma_table (IdedmaTable, repr(C), 8 bytes), NIDEDMA_TABLES, the Intel SCH timing registers. Host and reference-backed tests"
 
 [[file]]
 c = "sys/dev/pci/pciidevar.h"
 rust = "sys/dev/pci/pciidevar.rs"
-status = "todo"
-notes = "M16: pciide_softc and pciide_channel"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "c4c3fb39a5b5cd72c70542be84ed2e63d0a266c3"
+deps = ["sys/dev/ic/wdcvar.h", "sys/dev/pci/pciidereg.h"]
+notes = "M16a: the whole header: PCIIDE_MAX_CHANNELS, struct pciide_softc (PciideSoftc, repr(C) Softc, the WdcSoftc first; Cells, tags/handles Options with panicking accessors, sc_pp an Option, the DMA register hooks fn pointers) and struct pciide_channel (PciideChannel, repr(C), the ChannelSoftc first) with struct pciide_dma_maps (&'static bus DMA maps, the table a raw pointer); the PCIIDE_DMA*_READ/WRITE macros are PciideSoftc methods; the prototypes are pciide.rs's, pciide_machdep_compat_intr_* the machine's (machine::pciide_machdep); gcsc_chip_map (__i386__) has no counterpart"
 
 [[file]]
 c = "sys/dev/pci/pciide_acard_reg.h"
 rust = "sys/dev/pci/pciide_acard_reg.rs"
-status = "todo"
-notes = "M16: acard chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "06d69594f5bebf200759056fe8c1095cfc72acb7"
+notes = "M16a: the whole header (ATP850/860 timing, UDMA and control registers; the act/rec/udma_conf tables as u8 arrays). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_acer_reg.h"
 rust = "sys/dev/pci/pciide_acer_reg.rs"
-status = "todo"
-notes = "M16: acer chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "3bff8e42c0ff9a037f58110ae62c0daa19f8b63d"
+notes = "M16a: the whole header (ACER_* registers, acer_udma/acer_pio as u8 arrays); acer_dma under #ifdef unused not compiled as in the C. Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_amd_reg.h"
 rust = "sys/dev/pci/pciide_amd_reg.rs"
-status = "todo"
-notes = "M16: amd chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "7c32d60c5a3886160ce91ebff8dfbb52811eb256"
+notes = "M16a: the whole header (AMD756_* registers and timing tables; AMD756_CHIPREV_DISABLEDMA a const fn returning bool). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_apollo_reg.h"
 rust = "sys/dev/pci/pciide_apollo_reg.rs"
-status = "todo"
-notes = "M16: apollo chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "29903aeb274440e9476b897bc8689c2ee76f0978"
+notes = "M16a: the whole header (APO_* registers, the apollo udma/pio tables as u8 arrays; APO_IDECONF_FIFO_TRSH keeps the C's `<< 1 + 24` precedence, unused). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_cmd_reg.h"
 rust = "sys/dev/pci/pciide_cmd_reg.rs"
-status = "todo"
-notes = "M16: cmd chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "67f1228f95a1f85bd781a79b9bcd2373e4057736"
+notes = "M16a: the whole header (CMD_* registers, CMD_DATA_TIM as an if, the 0643-9 timing tables as u8 arrays: 0xA9 & co. are written as bytes, never sign-extended). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_cy693_reg.h"
 rust = "sys/dev/pci/pciide_cy693_reg.rs"
-status = "todo"
-notes = "M16: cy693 chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "de6ca72c762c0fddbb1fcb24d6c4ecbf34cf0ca7"
+notes = "M16a: the whole header (CY_* registers, cy_pio_pulse/rec; cy_dma_* under #ifdef unused not compiled), struct pciide_cy (PciideCy, Cells, the handle a &'static Cy82c693Handle). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_hpt_reg.h"
 rust = "sys/dev/pci/pciide_hpt_reg.rs"
-status = "todo"
-notes = "M16: hpt chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "14221dae5964bfd7fb09fcc9a5264e367ab1ad43"
+notes = "M16a: the whole header (HPT* registers and the 366/370/372/374 timing tables). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_ite_reg.h"
 rust = "sys/dev/pci/pciide_ite_reg.rs"
-status = "todo"
-notes = "M16: ite chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "3c8288cd5f4fa1845656a9e50c9693ee108a1be7"
+notes = "M16a: the whole header (IT_* registers; IT_TIM as an if). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_ixp_reg.h"
 rust = "sys/dev/pci/pciide_ixp_reg.rs"
-status = "todo"
-notes = "M16: ixp chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "e7637e91964eb24a67fece2c251a1c2036384724"
+notes = "M16a: the whole header (IXP_* registers and timing tables; the IXP_UDMA_ENABLE/DISABLE, IXP_SET_MODE/TIMING statement macros as functions over &mut u32). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_jmicron_reg.h"
 rust = "sys/dev/pci/pciide_jmicron_reg.rs"
-status = "todo"
-notes = "M16: jmicron chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "4279c0067434b773844a46f321a0b7f99a9a474f"
+notes = "M16a: the whole header (JMICRON_* registers; JMICRON_CHAN_EN as an if). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_natsemi_reg.h"
 rust = "sys/dev/pci/pciide_natsemi_reg.rs"
-status = "todo"
-notes = "M16: natsemi chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "9c381a857218c146f7d6a9b5b0937d791341a201"
+notes = "M16a: the whole header (PC87415 NATSEMI_* and SCx200 registers, their timing tables). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_nforce_reg.h"
 rust = "sys/dev/pci/pciide_nforce_reg.rs"
-status = "todo"
-notes = "M16: nforce chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "9df5f8cdd5e13a33bd287661cd54967cdaaed2ab"
+notes = "M16a: the whole header (NFORCE_* registers, nforce_pio/udma tables). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_pdc202xx_reg.h"
 rust = "sys/dev/pci/pciide_pdc202xx_reg.rs"
-status = "todo"
-notes = "M16: pdc202xx chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "fded28bed056d56c3aa2c4c1cd54d2d698758fdc"
+notes = "M16a: the whole header (PDC2xx/PDC262/PDC268/PDC203xx/PDC205xx registers and timing tables; SCONTROL_WRITE and SSTATUS_READ as functions over a PciidePdcsata), struct pciide_pdcsata (PciidePdcsata, Option tags/handles), wdc_pdc203xx_vtbl over pciide.rs's pdc203xx_read_reg/write_reg. Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_piix_reg.h"
 rust = "sys/dev/pci/pciide_piix_reg.rs"
-status = "todo"
-notes = "M16: piix chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "ec068fdee1a94bdd37db93b2dd326a7613d2b1d1"
+notes = "M16a: the whole header (PIIX_* IDE timing, slave timing, UDMA and config registers, the ISP/RTC/SCT tables as u8 arrays, ICH5-7 SATA map/PI/PCS bits). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_rdc_reg.h"
 rust = "sys/dev/pci/pciide_rdc_reg.rs"
-status = "todo"
-notes = "M16: rdc chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "b552380ce9f5e449f3e0241bf499bac602b1e5c4"
+notes = "M16a: the whole header (RDCIDE_* registers and setup/hold/udma tables). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_sii3112_reg.h"
 rust = "sys/dev/pci/pciide_sii3112_reg.rs"
-status = "todo"
-notes = "M16: sii3112 chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "990e3383ac31f7bec942b2cf18d651aef911f9de"
+notes = "M16a: license: Wasabi Systems BSD-4, kept whole; the whole header: the configuration-space registers, satalink_ba5_regmap[] (SATALINK_BA5_REGMAP of SatalinkBa5Regmap, member names kept), ba5_SIS, IDEDMA_CMD_INT_STEER, struct pciide_satalink (PciideSatalink), the static ba5_read_4_ind/ba5_read_4/ba5_write_4_ind/ba5_write_4 (the cookie through satalink(), which checks the chip map), BA5_READ_4/BA5_WRITE_4 written out at their uses, wdc_sii3114_vtbl. Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_sis_reg.h"
 rust = "sys/dev/pci/pciide_sis_reg.rs"
-status = "todo"
-notes = "M16: sis chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "685530592c5d5f30290f9395b6d01fdbd755fa06"
+notes = "M16a: the whole header (SIS_* registers, SIS_TIM133 as an if, struct pciide_sis as PciideSis, the timing tables). Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_svwsata_reg.h"
 rust = "sys/dev/pci/pciide_svwsata_reg.rs"
-status = "todo"
-notes = "M16: svwsata chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "86a7e24b2f8f336591d3959a05c9b30bdcefb2a1"
+notes = "M16a: the whole header (SVWSATA_* offsets), struct pciide_svwsata (PciideSvwsata), wdc_svwsata_vtbl over pciide.rs's svwsata_read_reg/write_reg/lba48_write_reg. Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/cy82c693var.h"
 rust = "sys/dev/pci/cy82c693var.rs"
-status = "todo"
-notes = "M16: Cypress 82C693 glue types pciide.c's cy693 path names"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "0fd28c854ce1ea892b0698c6355449dd76121c32"
+notes = "M16a: struct cy82c693_handle (Cy82c693Handle, Copy); the prototypes are cy82c693.rs's"
+
+[[file]]
+c = "sys/dev/pci/cy82c693reg.h"
+rust = "sys/dev/pci/cy82c693reg.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "f54b0f08096cf1d8e5710bd69f6ae0c2ee131f58"
+notes = "M16a: the whole header (CYHC_CONFIG_ADDR/DATA as BusAddr, the CONFIG_* register indexes). Reference-backed test"
+
+[[file]]
+c = "sys/dev/pci/cy82c693.c"
+rust = "sys/dev/pci/cy82c693.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "aaa6d19b184e69f83658413dea5d37394eed55a2"
+deps = ["sys/dev/pci/cy82c693reg.h", "sys/dev/pci/cy82c693var.h"]
+notes = "M16a: the whole file (cy82c693_init, cy82c693_read, cy82c693_write), pciide's cy693 glue (files.pci: pciide needs cy82c693); cyhc_handle/cyhc_initialized are one StaticCell<Option<Cy82c693Handle>> written once at autoconf time; cy82c693_init's panic on a second call with another tag is not made (bus space tags have no equality in the machine contract; its one caller passes its PCI bus's I/O tag)"
 
 [[file]]
 c = "sys/dev/pci/pciide.c"
 rust = "sys/dev/pci/pciide.rs"
-status = "todo"
-deps = ["sys/dev/ic/wdc.c", "sys/dev/pci/pciidereg.h", "sys/dev/pci/pciidevar.h", "sys/dev/pci/pciide_piix_reg.h"]
-notes = "M16 (9.1k lines, own subagent): pciide(4) with every chip of its table; QEMU's piix3-ide/piix4-ide exercise the PIIX path, compat and native modes, bus-master DMA; amd64 GENERIC only"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "85a9aa1a27039f1ec2fd757ab4715eb0f5708729"
+deps = ["sys/dev/ic/wdc.c", "sys/dev/pci/pciidereg.h", "sys/dev/pci/pciidevar.h", "sys/dev/pci/pciide_piix_reg.h", "sys/dev/pci/pciide_acard_reg.h", "sys/dev/pci/pciide_acer_reg.h", "sys/dev/pci/pciide_amd_reg.h", "sys/dev/pci/pciide_apollo_reg.h", "sys/dev/pci/pciide_cmd_reg.h", "sys/dev/pci/pciide_cy693_reg.h", "sys/dev/pci/pciide_hpt_reg.h", "sys/dev/pci/pciide_ite_reg.h", "sys/dev/pci/pciide_ixp_reg.h", "sys/dev/pci/pciide_jmicron_reg.h", "sys/dev/pci/pciide_natsemi_reg.h", "sys/dev/pci/pciide_nforce_reg.h", "sys/dev/pci/pciide_pdc202xx_reg.h", "sys/dev/pci/pciide_rdc_reg.h", "sys/dev/pci/pciide_sii3112_reg.h", "sys/dev/pci/pciide_sis_reg.h", "sys/dev/pci/pciide_svwsata_reg.h", "sys/dev/pci/cy82c693.c", "sys/arch/amd64/pci/pciide_machdep.c"]
+notes = "M16a: the whole driver, every chip of its table (247 product rows of 18 vendors; the __i386__ CS5535/gcsc row not compiled): the core (pciide_pci_read/write, lookup, match, attach, detach, activate with its per-chip save/restore by fn_addr_eq, compat and native register mapping, bus master DMA mapping, the interrupt handlers, the DMA register accessors, descriptor tables and pciide_dma_init/start/finish over bus_dma, chansetup/mapchan/candisable, compat interrupt through machine::pciide_machdep), default_chip_map, sata, piix/piixsata (PIIX..ICH7), amd756, apollo, cmd/cmd0643_9/cmd680, sii3112/sii3114, cy693, sis/sis96x, natsemi/ns_scx200, acer, hpt, pdc202xx/pdc20268/pdcsata (PDC203xx/205xx), serverworks/svwsata, acard, nforce, artisea, ite, ixp, jmicron, phison, sch, rdc. pciide_jmb_ca is ported but unused (jmb(4) is not). Chip private data (sc_cookie) malloc'ed and written whole, a failed malloc panics (the C dereferences NULL), its accessors check the chip map; the channel of a ChannelSoftc is found by address (pciide_cp) after a checked softc cast (pciide_sc). Kept as in the C: pciide_unmapregs_compat's ctl unmap through cmd_ioh, cmd680's two timing bytes to one register, hpt's compatchan reset, cy693's DMA_mode -1, rdc_setup_channel's PATR clearing. amd64 only in ioconf (pciide* at pci? flags 0x0000, cfdata[86]); QEMU pc's PIIX3 (8086:7010) attaches as on OpenBSD 8.0 (just smoke-wd). Host tests (lookup, table, PIIX timings, SiS bridges)"
 
 [[file]]
 c = "sys/dev/ic/i8042reg.h"
 rust = "sys/dev/ic/i8042reg.rs"
-status = "todo"
-notes = "M16: i8042 keyboard controller registers"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "01ccc71c6f1d65cdc79c6a0394fcb802f638ad74"
+license = "none"
+notes = "M16d: the whole header (ports, controller commands, command byte, ids); offsets usize, values u8; reference-backed test of every define"
 
 [[file]]
 c = "sys/dev/ic/pckbcvar.h"
 rust = "sys/dev/ic/pckbcvar.rs"
-status = "todo"
-notes = "M16: pckbc_internal and the slot interface pckbd/pms attach to"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "f90f6dce7f30971949f146fcadeca6d99ecfdd8c"
+notes = "M16d: the whole header: PckbcInternal (Cells; tag and handles Option until mapped; t_slotdata/t_sc Option<NonNull>), PckbcSoftc, PckbcAttachArgs, the slot and flag constants; pckbc_tag_t is &'static PckbcInternal; the extern declarations and prototypes are pckbc.rs's"
 
 [[file]]
 c = "sys/dev/ic/pckbc.c"
 rust = "sys/dev/ic/pckbc.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "3c8212630d82970341c9fc70fdb3f74df7da2f20"
 deps = ["sys/dev/ic/i8042reg.h", "sys/dev/ic/pckbcvar.h"]
-notes = "M16: pckbc(4), the i8042 on QEMU's q35 and pc; amd64 GENERIC only"
+notes = "M16d: the whole file: the 8042 primitives, pckbc_attach (aux echo probe, slot attach with the slot locator submatch, dummy aux handler), the command queues (queue.rs tail queues of 5 descriptors per slot; poll_cmd, enqueue_cmd with tsleep on the descriptor, cmdresponse, start, cleanup timeout), slot enable and the keyboard's 1 s polling timeout, set_poll, xt_translation, pckbcintr, pckbc_reset/stop, pckbc_cnattach (ported, unused: wscons_machdep.c's console path is not ported, the console is serial, so pckbc_console stays 0); send_cmd/xt_translation return bool, poll_data(1) Option<u8>, poll_cmd/enqueue_cmd Result; the i386/amd64 #ifs are machine::cpu::MACHINE_PC; sparc64 #ifdef and PCKBCDEBUG not compiled; pckbc_release_console's wscn_input_init(1) is unported! (unreachable with pckbc_console 0); host tests of the queues"
 
 [[file]]
 c = "sys/dev/isa/pckbc_isa.c"
 rust = "sys/dev/isa/pckbc_isa.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "e94fd7e52a1747823cdce5a0baac0aa063c9d8e5"
 deps = ["sys/dev/ic/pckbc.c", "sys/dev/isa/isa.c"]
-notes = "M16: pckbc at isa"
+notes = "M16d: the whole file: match (self test at IO_KBD unless console, claims port 0x60/5, irq 1 and 12), activate (suspend/resume), attach (two IST_EDGE IPL_TTY interrupts, the malloc'ed PckbcInternal or the console's, pckbc_attach with cf_flags)"
 
 [[file]]
 c = "sys/dev/pckbc/pckbdreg.h"
 rust = "sys/dev/pckbc/pckbdreg.rs"
-status = "todo"
-notes = "M16: PS/2 keyboard commands"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "7acd4eb17035b2ab71b1553c7153274c0b267e29"
+license = "none"
+notes = "M16d: the whole header (keyboard commands and responses, u8); reference-backed test"
 
 [[file]]
 c = "sys/dev/pckbc/pckbdvar.h"
 rust = "sys/dev/pckbc/pckbdvar.rs"
-status = "todo"
-notes = "M16: pckbd console attach"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "5a027ef3dd6bf36e5da0867fe02678480ba3c06c"
+license = "none"
+notes = "M16d: the two prototypes, re-exports of pckbd.rs's pckbd_cnattach and pckbd_hookup_bell (with the PckbdBellFn type)"
+
+[[file]]
+c = "sys/dev/pckbc/wskbdmap_mfii.c"
+rust = "sys/dev/pckbc/wskbdmap_mfii.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "98659fb77563720d957b2cd76e9d7537d30533a9"
+deps = ["sys/dev/wscons/wsksymvar.h", "sys/dev/wscons/wsksymdef.h"]
+notes = "M16d: the whole file (pckbd's layouts: 43 tables, 51 layouts in PCKBD_KEYDESCTAB), generated from the C as ukbdmap.rs (every table line and comment kept, KC(n) the const fn kc, KBD_MAP the const fn kbd_map, &[KeysymT] slices, no {0,0,0,0} terminator; WSKBD_NO_INTL_LAYOUTS not defined, its #if lines and the #if 0 CTL-Break entry kept as comments); #[rustfmt::skip]; host tests of the tables' shape and a reference-backed test of every keysym of every table and of the layout list; license: NetBSD Foundation BSD-2 notice, kept whole"
+
+[[file]]
+c = "sys/dev/pckbc/wskbdmap_mfii.h"
+rust = "sys/dev/pckbc/wskbdmap_mfii.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "e4179eafbdf5f619e20350f28168146260e5ad6f"
+notes = "M16d: the one extern (pckbd_keydesctab), PCKBD_KEYDESCTAB in wskbdmap_mfii.rs with the .c; license: NetBSD Foundation BSD-2 notice, the same as the .c's, kept once"
 
 [[file]]
 c = "sys/dev/pckbc/pckbd.c"
 rust = "sys/dev/pckbc/pckbd.rs"
-status = "todo"
-deps = ["sys/dev/ic/pckbc.c", "sys/dev/pckbc/pckbdreg.h", "sys/dev/pckbc/pckbdvar.h", "sys/dev/wscons/wskbd.c"]
-notes = "M16: pckbd(4) to wskbd(4) (M13); criterion: keys sent with QEMU's sendkey reach the shell on amd64"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "50d523f395ac276a961f39970bfb6fe4d8ac4b6a"
+deps = ["sys/dev/ic/pckbc.c", "sys/dev/pckbc/pckbdreg.h", "sys/dev/pckbc/pckbdvar.h", "sys/dev/wscons/wskbd.c", "sys/dev/pckbc/wskbdmap_mfii.c"]
+notes = "M16d: the whole file but sparc64's: probe (reset, the PC's GETID retry and no-PS/2 check by MACHINE_PC), attach (XT translation or set 2/3 fallback, disabled until wskbd enables it, wskbd child with KB_US|KB_DEFAULT and audiocookie null), enable, set_leds, input with the set 2 tables (pckbd_xtbl2_ext kept as the C has it, 127 entries, one off from its 0x00 row: external bug, unused when the 8042 translates, as QEMU's does), decode (E0/E1, Pause, typematic), ioctl (GTYPE, SETLEDS, GETLEDS, COMPLEXBELL, SETMODE), the bell hook (pckbd_bell, pckbd_hookup_bell for pcppi, a StaticCell), the console path (pckbd_cnattach, cngetc, cnpollc, cnbell: ported, unused, the console is serial); WSDISPLAY_COMPAT_RAWKBD compiled unconditionally as hidkbd.rs; sparc64's pckbd_xtbl3 and DEBUG messages not compiled; host tests of the decoding and a reference-backed test of both tables"
 
 [[file]]
 c = "sys/dev/pckbc/pmsreg.h"
 rust = "sys/dev/pckbc/pmsreg.rs"
-status = "todo"
-notes = "M16: PS/2 mouse and touchpad commands"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "39dd656e2768f73a4572803a4735eae9ab8bb16b"
+license = "none"
+notes = "M16d: every define: the mouse commands and packet bits, the knock magics, the Synaptics queries, modes and capability bits, the ALPS and Elantech values and bezels; wire bytes u8, the Synaptics bit masks and limits i32, the ALPS gestures u32; the function-like macros are lower-case const fns; host tests of the macros and a reference-backed test of every define (with a completeness check)"
 
 [[file]]
 c = "sys/dev/pckbc/pms.c"
 rust = "sys/dev/pckbc/pms.rs"
-status = "todo"
-deps = ["sys/dev/ic/pckbc.c", "sys/dev/pckbc/pmsreg.h"]
-notes = "M16: pms(4) to wsmouse(4) (M13), every protocol of its table; QEMU exercises the plain and IntelliMouse ones"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "2d9f4cd9cfa4f7cee02a1b5d4a805ed8e4344719"
+deps = ["sys/dev/ic/pckbc.c", "sys/dev/pckbc/pmsreg.h", "sys/dev/wscons/wsmouse.c"]
+notes = "M16d: the whole file: probe (reset on the aux slot), attach (input handler, wsmouse child, protocol lookup, disabled until opened), every protocol of pms_protocols[] (standard, IntelliMouse, Synaptics with its pass-through wsmouse, ALPS with the Dualpoint trackpoint, Elantech v1..v4 with the v4 trackpoint), the reset announcement task and timeout, pms_change_state under sc_state_lock, the ioctls, activate; the command helpers return Result<(), Errno> (ENXIO where the C returns -1 for an unaccepted answer), enable bool, sync true when in sync; sub-softcs malloced M_WAITOK|M_ZERO and freed where the C frees; None wsmouse/sub-softc/protocol arms (unreachable once attached) skip instead of dereferencing NULL; mouse_has_softbtn is acpi's flag by MACHINE_PC; DIAGNOSTIC messages follow the diagnostic feature, DEBUG ones not compiled; kept as the C has them: the Elantech v1..v3 read-back loops end on a failed command, the v1 parity table is inverted on every refill (external bugs); no stubs; host tests of the packet sync and decoding, the reset detection, the state counting, the parity table, the ioctls, and reference-backed tests of the defines and alps_models"
 
 [[file]]
 c = "sys/dev/hid/hidmsvar.h"
@@ -10893,29 +11012,37 @@ notes = "M16b: license: BSD-2 (NetBSD). Match by class, attach (BAR 0, quiet the
 [[file]]
 c = "sys/dev/pv/viogpu.h"
 rust = "sys/dev/pv/viogpu.rs"
-status = "todo"
-notes = "M16: virtio-gpu protocol structures"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "ea67ae026089b4746428d67573961f8668943b40"
+notes = "M16d: license: BSD-3 (Red Hat), kept whole beside viogpu.c's ISC notice in viogpu.rs; the whole header: the feature bits, virtio_gpu_ctrl_type/shm_id/formats as u32 constants, every structure #[repr(C, packed)] (GpuWire: bytes to and from the command page; sizes asserted at compile time); virtio_gpu_resp_capset's flexible capset_data[] is not a member; __le* fields are native (little-endian kernels only, as the C's typedefs)"
 
 [[file]]
 c = "sys/dev/pv/viogpu.c"
 rust = "sys/dev/pv/viogpu.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "09c0624cc130e6545de1cc03b4f9823dc01eee44"
 deps = ["sys/dev/pv/viogpu.h", "sys/dev/pv/virtio.c"]
-notes = "M16: viogpu(4) over rasops/wsdisplay (M13); arm64 GENERIC only (commented out in amd64's); criterion: console text on QEMU's virtio-gpu screenshot"
+notes = "M16d: the whole file but the #if 0 viogpu_fb_probe (drm): viogpu_ca/cd, accessops, match, attach (virtio 1.x only, control and cursor queues, the command page, display info, the frame buffer in DMA memory, CREATE_2D, ATTACH_BACKING, SET_SCANOUT, rasops, wsdisplay_cnattach as the C always does, the wsdisplay child), viogpu_repaint (10 ms), vq_done, rx_soft (established, never scheduled, as in C), send_cmd (generic over the wire structures, polled), get_display_info, create_2d, set_scanout, attach_backing, transfer_to_host_2d, flush_resource, wsioctl, wsmmap, alloc_screen; deviations: the error labels are one ViogpuUnwind level, bus_dmamem_unmap gets the kva where the C passes the pointer's address, Result<(), Errno> (EIO) for the 0/1 returns, wsioctl Ok(false) for -1, selftest=fb/wscons hooks under feature qemu; arm64 ioconf viogpu* at virtio? and wsdisplay* at viogpu? (merged into the simplefb wsdisplay entry); smoke-viogpu"
 
 [[file]]
 c = "sys/dev/pv/viomb.c"
 rust = "sys/dev/pv/viomb.rs"
-status = "todo"
-deps = ["sys/dev/pv/virtio.c"]
-notes = "M16: viomb(4) memory balloon; criterion: QEMU's balloon command inflates and deflates it, both archs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "de89a48d8c924d072e18e811f53c4d65fce9be11"
+deps = ["sys/dev/pv/virtio.c", "sys/kern/dma_alloc.c"]
+notes = "M16d: license: BSD-2 (NetBSD, two notices kept whole); the whole file: viomb_ca/cd, match, attach (inflate and deflate queues, dma_alloc'ed frame number array and its map, taskq viomb, the desired/current sensors), viomb_config_change, viomb_worker, viomb_inflate (uvm_pglistalloc below dma_constraint), viomb_deflate, viomb_read_config, viomb_vq_dequeue (Result), viomb_inflate_intr, viomb_deflate_intr; the C's quirks kept: sensors lag the last request, a short deflate records i - 1 entries, request lengths are nvpages words; deviations: VIRTIO_PAGE_SIZE == PAGE_SIZE a const assertion (the C's #error), viomb_nvpages host-tested, VIOMBDEBUG behind VIRTIO_DEBUG; viomb* at virtio? on both archs; smoke-virtio: balloon 384 of 512 MB then 512 give raw0=134217728/raw1=133169152 then 0/1048576, as OpenBSD 8.0 does at the same scale"
 
 [[file]]
 c = "sys/dev/pv/viocon.c"
 rust = "sys/dev/pv/viocon.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "3c5ab95ba53939dde6c42623d124411a844d4273"
 deps = ["sys/dev/pv/virtio.c"]
-notes = "M16: viocon(4) virtio console; commented out in amd64 GENERIC and absent from arm64's, so built only with a cargo feature mirroring that config line (docs/ARCHITECTURE.md)"
+notes = "M16d: the whole file: virtio_console_control(_resize), viocon_ca/cd, match, attach (one port, malloc'ed sc_vqs and sc_ports), viocon_port_create (queues p0rx/p0tx, the soft interrupt, the buffers in DMA memory, the tty), tx_drain, tx_intr, rx_fill, rx_intr, rx_soft, vioconstart, vioconhwiflow, vioconparam, vioconopen/close/read/write/tty/stop/ioctl, the CTASSERT; compiled on every build; cargo feature viocon (amd64 GENERIC's commented-out line) adds viocon* at virtio? to amd64's ioconf and NVIOCON 1 to cdevsw 94 (0 without it: ENXIO, as config(8) counts it); deviations: dev2sc/dev2port return Option (ENXIO or nothing where the C would dereference a missing unit), Result returns; no smoke (in neither GENERIC)"
 
 [[file]]
 c = "sys/dev/ic/am79900reg.h"
@@ -11333,28 +11460,44 @@ notes = "M16a: the whole file: struct sdhc_pci_softc (repr(C), sdhc softc first)
 [[file]]
 c = "sys/dev/midi.c"
 rust = "sys/dev/midi.rs"
-status = "todo"
-deps = ["sys/dev/midi_if.h"]
-notes = "M16: midi(4), which amd64 GENERIC attaches at eap; no QEMU device plays MIDI, so it is checked to attach only"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "eda19823c01550339ff412f0d81664eaf4efe80a"
+deps = ["sys/dev/midi_if.h", "sys/dev/midivar.h"]
+notes = "M16d: the whole file: midi_buf_wakeup, midi_iintr, midiread, midi_ointr, midi_timeout, midi_out_start/stop/do, midiwrite, midikqfilter and its filters, midiioctl (ENOTTY), midiopen, midiclose, midiprobe, midiattach (DIAGNOSTIC method check under the diagnostic feature), mididetach, midiprint, midi_attach_mi; the device_lookup/device_unref pairs are a drop guard; missing driver methods panic by name where the C calls NULL; cdevsw 52 on both archs (NMIDI 1: midi* at eap? on amd64, midi* at umidi? on arm64, umidi not ported); midi0 at eap0 attaches under QEMU's ES1370 (smoke-eap), no QEMU device plays MIDI"
 
 [[file]]
 c = "sys/dev/midi_if.h"
 rust = "sys/dev/midi_if.rs"
-status = "todo"
-notes = "M16: the midi_hw_if interface"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "09755cbe062db64e6ff80f347a79688ff10913e1"
+notes = "M16d: midi_info (name a &'static str), MIDI_PROP_*, midi_hw_if as a table of Option<unsafe fn> over the void * handle (the audio_if.h idiom); midi_attach_mi lives in midi.rs; reference-backed test of the constants"
+
+[[file]]
+c = "sys/dev/midivar.h"
+rust = "sys/dev/midivar.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "b906d961c75c5e333b7e9a2a6e7ea6c25f24f73e"
+notes = "M16d: MIDI_RATE, MIDIBUF_SIZE/MASK, struct midi_buffer with the MIDIBUF_* macros as methods (data in an UnsafeCell for uiomove), struct midi_softc (Cells, protected by audio_lock); host test of the ring"
 
 [[file]]
 c = "sys/dev/pci/eapreg.h"
 rust = "sys/dev/pci/eapreg.rs"
-status = "todo"
-notes = "M16: ES1370/ES1371 registers"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "dbc46d45b13f575dde62ea47fdb4fcea0e6f6187"
+notes = "M16d: every define, typed by use (register offsets usize, 32-bit register bits u32, UART bits u8, AK4531/SRC/mixer numbers i32), the function-like macros as lower-case const fns; EAP_JYSTK_EN (defined twice) once; SRC_MAGIC keeps the C's (1<15) (unused); host tests of the macros, reference-backed test of every define"
 
 [[file]]
 c = "sys/dev/pci/eap.c"
 rust = "sys/dev/pci/eap.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "ec8673dbfb026fb8c4756fd89a60093bce75e0c6"
 deps = ["sys/dev/pci/eapreg.h", "sys/dev/audio.c", "sys/dev/midi.c"]
-notes = "M16: eap(4); criterion: QEMU's ES1370 plays the tone (--expect-tone); amd64 GENERIC only"
+notes = "M16d: the whole file (NMIDI > 0): eap_match (eap_devices[]), eap_attach (ES1370: AK4531 reset and mixer defaults through its set_port; ES1371/ES1373/CT5880: SRC programmed for 48 kHz, ac97(4) host), eap_resume/eap_activate, the AK4531 and ES1371 codec access with their timeouts, eap_intr (ADC, DAC2, UART), DMA list (eap_malloc adds M_ZERO to its node), set_params (ULINEAR returns EINVAL at once: the C's case falls through to default), trigger/halt, the ES1370 mixer (set_port, get_port, query_devinfo) and the ES1371 ones through the codec, the MIDI UART (open, close, output, getinfo); sc_prun/sc_rrun checked under the diagnostic feature; eap* at pci?, audio* at eap? and midi* at eap? in amd64's ioconf (amd64 GENERIC only); host tests (mixer bits, devinfo, blocksize, midi info); smoke-eap: ES1370 plays the tone"
 
 [[file]]
 c = "sys/dev/usb/uaudio.c"
@@ -11730,28 +11873,36 @@ notes = "M16c: license: BSD-4 (Bill Paul), kept whole; the whole file: dcphy_ca/
 [[file]]
 c = "sys/dev/ic/lptreg.h"
 rust = "sys/dev/ic/lptreg.rs"
-status = "todo"
-notes = "M16: parallel port registers"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "107f740d7e84c115a3fc1ea215e8b2bd3227c0f6"
+notes = "M16d: every define (the register offsets keep their lower-case C names); both notices kept (the second is William Jolitz's 1990 copyright line); reference-backed test"
 
 [[file]]
 c = "sys/dev/ic/lptvar.h"
 rust = "sys/dev/ic/lptvar.rs"
-status = "todo"
-notes = "M16: lpt_softc"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "fa04f4f44f23e492ba6c02db456f5e79ebb1cea7"
+notes = "M16d: struct lpt_softc (Cells, valid as zero) and the LPT_* state and flag bits; the functions it declares live in lpt.rs; reference-backed test"
 
 [[file]]
 c = "sys/dev/ic/lpt.c"
 rust = "sys/dev/ic/lpt.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "cf1f332202774bf3bbdd32f463ba8a9a6e37d226"
 deps = ["sys/dev/ic/lptreg.h", "sys/dev/ic/lptvar.h"]
-notes = "M16: lpt(4); criterion: bytes written to /dev/lpt0 reach QEMU's isa-parallel chardev file; amd64 GENERIC only"
+notes = "M16d: the whole file: lpt_port_test (bool), lpt_attach_common, lptopen (prime, wait for ready, the C's return of tsleep's 0 kept), lpt_not_ready (log), lptwakeup, lptclose, lptpushbytes (polled with the adaptive spin, or interrupt-driven), lptwrite, lptintr, lpt_activate; lptclose/lptwrite return ENXIO for a unit with no device where the C dereferences cd_devs; LPRINTF (DEBUG && notdef) not carried; cdevsw 16 with NLPT 1 on amd64, 0 on arm64; smoke-lpt: bytes reach QEMU's parallel chardev"
 
 [[file]]
 c = "sys/dev/isa/lpt_isa.c"
 rust = "sys/dev/isa/lpt_isa.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "551540dec0f109cbf3a10f7db941255a7f73b709"
 deps = ["sys/dev/ic/lpt.c", "sys/dev/isa/isa.c"]
-notes = "M16: lpt at isa"
+notes = "M16d: lpt_isa_probe (data port walking tests, isa_intr_check through the parent isa_softc's chipset tag, polled when the IRQ is refused), lpt_isa_attach; lpt0 at isa? port 0x378 irq 7 in amd64's ioconf (lpt1, lpt2 are commented out in GENERIC; lpt* at puc? waits for lpt_puc.c)"
 
 [[file]]
 c = "sys/dev/isa/isadmavar.h"
@@ -11818,34 +11969,46 @@ notes = "M16: fd(4); criterion: a 1.44 MB image on QEMU's floppy read with mount
 [[file]]
 c = "sys/dev/isa/pcppireg.h"
 rust = "sys/dev/isa/pcppireg.rs"
-status = "todo"
-notes = "M16: PC speaker port bits"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "8667ab80e6dadc84e3dac2f60a27bef59c60facb"
+license = "none"
+notes = "M16d: PIT_ENABLETMR2, PIT_SPKRDATA, PIT_SPKR (u8, port B's bits); no licence text in the C; reference-backed test"
 
 [[file]]
 c = "sys/dev/isa/pcppivar.h"
 rust = "sys/dev/isa/pcppivar.rs"
-status = "todo"
-notes = "M16: pcppi_bell interface"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "3ddf41955e4c4abca52294395dec26d005ccea31"
+notes = "M16d: pcppi_tag_t (PcppiTag), struct pcppi_attach_args, PCPPI_BELL_SLEEP/POLL; pcppi_bell lives in pcppi.rs; license: Carnegie Mellon notice, kept whole; reference-backed test"
 
 [[file]]
 c = "sys/dev/isa/pcppi.c"
 rust = "sys/dev/isa/pcppi.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "60191b9dc720b4b92d10d2315fa2f574a8c358b5"
 deps = ["sys/dev/isa/pcppireg.h", "sys/dev/isa/pcppivar.h", "sys/dev/isa/isa.c"]
-notes = "M16: pcppi(4), the PC speaker and the console bell; criterion: the wsdisplay bell is heard through -machine pcspk-audiodev (coreaudio, by ear in play-audio) and recorded (wav, --expect-tone) in smoke; amd64 GENERIC only"
+notes = "M16d: the whole file: pcppi_match (port B's bit-0 toggle test), pcppi_attach (maps the i8254 and port B, hooks pcppi_kbd_bell into pckbd and hidkbd, NPCKBD and NHIDKBD > 0, attaches spkr), pcppi_bell (counter 2 square wave, PIT_SPKR, timeout or poll or sleep on pcppi_bell_stop's address), pcppi_bell_stop, pcppi_kbd_bell; IO_PPI added to isareg.rs; pcppi0 at isa? in amd64's ioconf (amd64 GENERIC only); license: Carnegie Mellon notice, kept whole; smoke-bell: the console bell reaches pcspk-audiodev"
 
 [[file]]
 c = "sys/dev/isa/spkrio.h"
 rust = "sys/dev/isa/spkrio.rs"
-status = "todo"
-notes = "M16: spkr(4) ioctls"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "a852cf0782f14036c0679c628ed0636f19f5df8d"
+license = "none"
+notes = "M16d: SPKRTONE, SPKRTUNE, tone_t (ToneT, AbiPod); the C's comment says duration is in 1/100 s, spkr.c passes milliseconds; no licence text in the C; host test of the ioctl numbers"
 
 [[file]]
 c = "sys/dev/isa/spkr.c"
 rust = "sys/dev/isa/spkr.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "28fa395d0d18074bc59e7428cc56e509db0f6944"
 deps = ["sys/dev/isa/pcppi.c", "sys/dev/isa/spkrio.h"]
-notes = "M16: spkr(4) plays a tune string on the PC speaker; amd64 GENERIC only"
+notes = "M16d: the whole file: tone, rest, the play string interpreter (playinit, playtone, playstring) over a copy of the play state with a Sound call-back (host-tested), spkrprobe/spkrattach, spkropen/close/write/ioctl (SPKRTONE, SPKRTUNE with copyin); the file-scope state is one StaticCell under the kernel lock; number and length arithmetic wraps where the C's int overflow is undefined, a division by zero after 26+ dots panics where the C traps (OpenBSD 8.0: integer divide fault in playtone, EXTERNAL_BUGS); SPKRDEBUG not carried; cdevsw 27 on amd64 (NSPKR 1); spkr0 at pcppi? in amd64's ioconf; license: BSD-4 (Eric S. Raymond), kept whole"
 
 [[file]]
 c = "sys/dev/usb/uwacom.c"
@@ -11885,9 +12048,11 @@ notes = "M16e: the whole file: piixpm_ids[] (14), piixpm_match, piixpm_attach (P
 [[file]]
 c = "sys/dev/pv/viornd.c"
 rust = "sys/dev/pv/viornd.rs"
-status = "todo"
-deps = ["sys/dev/pv/virtio.c"]
-notes = "M16: viornd(4); criterion: QEMU's virtio-rng feeds rnd(4) (enqueue counts grow), both archs; it also gives rnd(4) real entropy under QEMU"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "edb5d3c3717406536a7987393c4aedf969703a8f"
+deps = ["sys/dev/pv/virtio.c", "sys/kern/dma_alloc.c"]
+notes = "M16d: the whole file: viornd_ca/cd (CD_COCOVM), match, attach (dma_alloc'ed 16-byte buffer, its map, one queue, the first request a tick after attach), viornd_vq_done (the words to enqueue_randomness, the next request 15 << shift s later unless VIORND_ONESHOT), viornd_tick; deviations: the interval and word count are host-tested functions (viornd_interval, viornd_nwords), VIORND_DEBUG messages behind a const; M16d: enqueue_randomness is rnd.c's (the words land in the entropy input ring and reach the pool); viornd* at virtio? on both archs; smoke-virtio (amd64: viornd0 at virtio2, irq69/viornd0:1 1 as on OpenBSD 8.0; arm64: viornd0 at virtio28, one interrupt)"
 
 [[file]]
 c = "sys/sys/gpio.h"

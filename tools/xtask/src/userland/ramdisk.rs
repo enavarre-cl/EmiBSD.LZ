@@ -95,6 +95,9 @@ pub(super) const DEVICE_MAGIC: &str = "emibsd-makefs-device";
 ///   `cd1`; `MAKEDEV all` makes `cd0` and `cd1`);
 /// - vnode disks (`vnd`, M10c), made by `devices()` from `VND_UNITS` the same way: block 14
 ///   (`bdev_disk_init(NVND,vnd)`, 69 / 67), character 41 (219 / 169), `vnd0`..`vnd3`;
+/// - IDE disks (`wd`, M16a), made by `devices()` from `WD_UNITS` the same way: block `wd` 0
+///   (`bdev_disk_init(NWD,wd)`), character 3, `wd0a`..`wd0p` and `rwd0a`..`rwd0p` for
+///   `wd0`..`wd3` (`MAKEDEV all`'s; `dodisk wd $U 0 3`);
 /// - `bio` is major 79 (`bio` 79 / 79: `/dev/bio`, `MAKEDEV` makes it 0600), minor 0;
 /// - `fuse` is major 92 (`cdev_fuse_init`, 277 / 227: `/dev/fuse0`, cloning, the one node
 ///   libfuse opens; `MAKEDEV`'s `_mcdev(fuse, ...)` makes it 0600), minor 0;
@@ -118,7 +121,10 @@ pub(super) const DEVICE_MAGIC: &str = "emibsd-makefs-device";
 ///   the call-out nodes `cuaU0`..`cuaU3`, minor `unit + 128` (`UCOMCUA_MASK`), mode 0660,
 ///   group `dialer` (`MAKEDEV`'s `ttyU*`).
 ///
-/// `/dev/random` (major 45) is left out: the kernel has no `random` driver yet.
+/// - `random` is major 45 (`cdev_random_init(1,random)`, M16d; 223 / 173): `urandom`, minor 0,
+///   mode 0644, and `random` a symbolic link to it (`MAKEDEV`'s `rnd`: `M urandom c 45 0 644`,
+///   `ln -s urandom random`; `DEV_LINKS`).
+///
 /// (name, kind, major, minor, mode, group)
 const DEVICES: &[(&str, char, u32, u32, u32, &str)] = &[
     ("console", 'c', 0, 0, 0o600, "wheel"),
@@ -128,6 +134,7 @@ const DEVICES: &[(&str, char, u32, u32, u32, &str)] = &[
     ("null", 'c', 2, 2, 0o666, "wheel"),
     ("zero", 'c', 2, 12, 0o666, "wheel"),
     ("klog", 'c', 7, 0, 0o600, "wheel"),
+    ("urandom", 'c', 45, 0, 0o644, "wheel"),
     ("tty00", 'c', 8, 0, 0o600, "wheel"),
     ("bpf", 'c', 23, 0, 0o600, "wheel"),
     ("rd0a", 'b', 17, 0, 0o640, "operator"),
@@ -146,6 +153,11 @@ const DEVICES: &[(&str, char, u32, u32, u32, &str)] = &[
     // M12: audio(4) (`MAKEDEV`'s `audio*`) and the first USB bus (`usb*`).
     ("audio0", 'c', 42, 0, 0o660, "_sndiop"),
     ("audioctl0", 'c', 42, 192, 0o660, "_sndiop"),
+    // M16d: lpt(4)'s first port (`MAKEDEV`'s `lpt*`: `M lpt$U c 16 $U 600`; amd64's cdevsw 16,
+    // which arm64's leaves unconfigured).
+    ("lpt0", 'c', 16, 0, 0o600, "wheel"),
+    // M16d: spkr(4) (`MAKEDEV`'s `speaker`: `M speaker c 27 0 600`; amd64's cdevsw 27).
+    ("speaker", 'c', 27, 0, 0o600, "wheel"),
     ("usb0", 'c', 61, 0, 0o640, "wheel"),
     // M16b: `uhid` 62 (`MAKEDEV`'s `_mcdev(uhid, uhid*, uhid, {-major_uhid_c-}, 600)`, whose
     // target lists units 0 to 7). `ugen` 63 is made by `devices()`.
@@ -232,6 +244,13 @@ const UGEN_UNITS: &[u32] = &[0, 1];
 /// `cdevsw[]` major of `ugen` (`cdev_usbdev_init(NUGEN,ugen)`, 63 on amd64 and arm64).
 const UGEN_CHAR_MAJOR: u32 = 63;
 
+/// The `wd` units the image has nodes for: `MAKEDEV all`'s `wd0`..`wd3`.
+const WD_UNITS: &[u32] = &[0, 1, 2, 3];
+
+/// `bdevsw[]` and `cdevsw[]` majors of `wd` (0 and 3 on amd64 and arm64).
+const WD_BLOCK_MAJOR: u32 = 0;
+const WD_CHAR_MAJOR: u32 = 3;
+
 /// `bdevsw[]` and `cdevsw[]` majors of `vnd` (14 and 41 on amd64 and arm64).
 const VND_BLOCK_MAJOR: u32 = 14;
 const VND_CHAR_MAJOR: u32 = 41;
@@ -256,6 +275,11 @@ pub(super) fn devices() -> Vec<(String, char, u32, u32, u32, &'static str)> {
             VND_UNITS
                 .iter()
                 .map(|u| ("vnd", *u, VND_BLOCK_MAJOR, VND_CHAR_MAJOR)),
+        )
+        .chain(
+            WD_UNITS
+                .iter()
+                .map(|u| ("wd", *u, WD_BLOCK_MAJOR, WD_CHAR_MAJOR)),
         );
     for unit in UGEN_UNITS {
         for endpoint in 0..16 {
@@ -334,8 +358,12 @@ pub(crate) fn check_devices(image: &Path) -> Result<()> {
 pub(super) const FD_NODES: u32 = 64;
 
 /// `/dev/stdin` and friends, as `MAKEDEV` links them: (name, target).
-pub(super) const DEV_LINKS: &[(&str, &str)] =
-    &[("stdin", "fd/0"), ("stdout", "fd/1"), ("stderr", "fd/2")];
+pub(super) const DEV_LINKS: &[(&str, &str)] = &[
+    ("stdin", "fd/0"),
+    ("stdout", "fd/1"),
+    ("stderr", "fd/2"),
+    ("random", "urandom"),
+];
 
 /// A user of `/etc/master.passwd`: (name, uid, gid, class, gecos, home, shell). OpenBSD's
 /// `root`, `daemon` and `nobody` (the lines of its stock `master.passwd`), and tcpdump(8)'s
