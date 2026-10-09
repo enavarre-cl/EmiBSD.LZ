@@ -11119,14 +11119,19 @@ notes = "M16: mfii(4); criterion: QEMU's megasas-gen2 disk mounted, both archs"
 [[file]]
 c = "sys/dev/ic/mpireg.h"
 rust = "sys/dev/ic/mpireg.rs"
-status = "todo"
-notes = "M16: LSI Fusion-MPT registers"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "fa6041776d728e0eb7832dd6092543002aea7da8"
+notes = "M16a: the whole header, generated from it and checked: every register, SGE flag, function, IOCStatus, event and config page constant (typed by use: register offsets usize, functions and whoinit u8, IOCStatus u16, flags the width of their member) and every message and page structure (repr(C), or repr(C, packed) where a member is unaligned; sizes and offsets asserted at compile time); the five function-like macros are const fns; the valueless #if notyet MPI_SCSIIO_ERR_STATUS_* block is not ported; mpi_msg_eventack_reply keeps the C's u32 ioc_status at offset 14 (22 bytes packed, 24 in C, size unused). just test-ref compares every define with the header"
 
 [[file]]
 c = "sys/dev/ic/mpivar.h"
 rust = "sys/dev/ic/mpivar.rs"
-status = "todo"
-notes = "M16: mpi_softc"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "2435f8c343c762da0ee89c595013c7b7f6c6f31a"
+deps = ["sys/dev/ic/mpireg.h"]
+notes = "M16a: the whole header: struct mpi_dmamem (malloc'ed, &'static), mpi_ccb_bundle (repr(C)), mpi_rcb, mpi_ccb (ccb_cookie is an enum: transfer, poll, wait mutex; mpi_poll's rv is ccb_poll_rv), mpi_softc (Cells; sc_nccbs added to bound the ccb index); MPI_DEBUG not defined and not ported"
 
 [[file]]
 c = "sys/dev/ic/mpi.c"
