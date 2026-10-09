@@ -76,7 +76,9 @@ needs; later `pmap.rs`, `intr.rs`, ...; `autoconf.rs` is what `ioconf.c` and the
 `<dev/acpi/acpivar.h>`, each arch's `acpi_machdep.c`: `acpi_map`, the register maps, the SCI, the
 global lock, `pwr_action`, `ci_acpi_proc_id`, `cpu_suspended`, and the `ACPI_PRT`/`ACPI_SECTWO`
 constants that stand for acpi.c's `#ifdef __amd64__`/`__arm64__` walks; arm64 answers as a
-machine without ACPI until M14), all re-exported from `sys/machine/mod.rs`, which also re-exports
+machine without ACPI until M14; `pciide_machdep.rs` (M16a) is the machine half of
+`<dev/pci/pciidevar.h>`, each arch's `pciide_machdep.c`: a compatibility-mode IDE channel's
+ISA IRQ 14 or 15 on amd64, none on arm64, which has no ISA bus), all re-exported from `sys/machine/mod.rs`, which also re-exports
 `crate::arch::current::Machine` and asserts at compile time that it implements every trait. Generic
 code names only `crate::machine`. `bus.rs` also carries the C names as free functions
 (`bus_space_read_1(t, h, o)`, `bus_dmamap_load(t, map, ...)`), so a driver reads like its

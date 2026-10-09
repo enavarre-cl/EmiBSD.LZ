@@ -10566,8 +10566,11 @@ notes = "M16a: the whole header: PCIIDE_NUM_CHANNELS, the PCIIDE_REG_*/INTERFACE
 [[file]]
 c = "sys/dev/pci/pciidevar.h"
 rust = "sys/dev/pci/pciidevar.rs"
-status = "todo"
-notes = "M16: pciide_softc and pciide_channel"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "c4c3fb39a5b5cd72c70542be84ed2e63d0a266c3"
+deps = ["sys/dev/ic/wdcvar.h", "sys/dev/pci/pciidereg.h"]
+notes = "M16a: the whole header: PCIIDE_MAX_CHANNELS, struct pciide_softc (PciideSoftc, repr(C) Softc, the WdcSoftc first; Cells, tags/handles Options with panicking accessors, sc_pp an Option, the DMA register hooks fn pointers) and struct pciide_channel (PciideChannel, repr(C), the ChannelSoftc first) with struct pciide_dma_maps (&'static bus DMA maps, the table a raw pointer); the PCIIDE_DMA*_READ/WRITE macros are PciideSoftc methods; the prototypes are pciide.rs's, pciide_machdep_compat_intr_* the machine's (machine::pciide_machdep); gcsc_chip_map (__i386__) has no counterpart"
 
 [[file]]
 c = "sys/dev/pci/pciide_acard_reg.h"
@@ -10668,8 +10671,10 @@ notes = "M16a: the whole header (NFORCE_* registers, nforce_pio/udma tables). Re
 [[file]]
 c = "sys/dev/pci/pciide_pdc202xx_reg.h"
 rust = "sys/dev/pci/pciide_pdc202xx_reg.rs"
-status = "todo"
-notes = "M16: pdc202xx chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "fded28bed056d56c3aa2c4c1cd54d2d698758fdc"
+notes = "M16a: the whole header (PDC2xx/PDC262/PDC268/PDC203xx/PDC205xx registers and timing tables; SCONTROL_WRITE and SSTATUS_READ as functions over a PciidePdcsata), struct pciide_pdcsata (PciidePdcsata, Option tags/handles), wdc_pdc203xx_vtbl over pciide.rs's pdc203xx_read_reg/write_reg. Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_piix_reg.h"
@@ -10690,8 +10695,10 @@ notes = "M16a: the whole header (RDCIDE_* registers and setup/hold/udma tables).
 [[file]]
 c = "sys/dev/pci/pciide_sii3112_reg.h"
 rust = "sys/dev/pci/pciide_sii3112_reg.rs"
-status = "todo"
-notes = "M16: sii3112 chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "990e3383ac31f7bec942b2cf18d651aef911f9de"
+notes = "M16a: license: Wasabi Systems BSD-4, kept whole; the whole header: the configuration-space registers, satalink_ba5_regmap[] (SATALINK_BA5_REGMAP of SatalinkBa5Regmap, member names kept), ba5_SIS, IDEDMA_CMD_INT_STEER, struct pciide_satalink (PciideSatalink), the static ba5_read_4_ind/ba5_read_4/ba5_write_4_ind/ba5_write_4 (the cookie through satalink(), which checks the chip map), BA5_READ_4/BA5_WRITE_4 written out at their uses, wdc_sii3114_vtbl. Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/pciide_sis_reg.h"
@@ -10704,8 +10711,10 @@ notes = "M16a: the whole header (SIS_* registers, SIS_TIM133 as an if, struct pc
 [[file]]
 c = "sys/dev/pci/pciide_svwsata_reg.h"
 rust = "sys/dev/pci/pciide_svwsata_reg.rs"
-status = "todo"
-notes = "M16: svwsata chip registers for pciide.c's chip table, ported whole with it; QEMU exercises piix (PIIX3/PIIX4)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "86a7e24b2f8f336591d3959a05c9b30bdcefb2a1"
+notes = "M16a: the whole header (SVWSATA_* offsets), struct pciide_svwsata (PciideSvwsata), wdc_svwsata_vtbl over pciide.rs's svwsata_read_reg/write_reg/lba48_write_reg. Reference-backed test of every plain define"
 
 [[file]]
 c = "sys/dev/pci/cy82c693var.h"
@@ -10735,9 +10744,11 @@ notes = "M16a: the whole file (cy82c693_init, cy82c693_read, cy82c693_write), pc
 [[file]]
 c = "sys/dev/pci/pciide.c"
 rust = "sys/dev/pci/pciide.rs"
-status = "todo"
-deps = ["sys/dev/ic/wdc.c", "sys/dev/pci/pciidereg.h", "sys/dev/pci/pciidevar.h", "sys/dev/pci/pciide_piix_reg.h"]
-notes = "M16 (9.1k lines, own subagent): pciide(4) with every chip of its table; QEMU's piix3-ide/piix4-ide exercise the PIIX path, compat and native modes, bus-master DMA; amd64 GENERIC only"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "85a9aa1a27039f1ec2fd757ab4715eb0f5708729"
+deps = ["sys/dev/ic/wdc.c", "sys/dev/pci/pciidereg.h", "sys/dev/pci/pciidevar.h", "sys/dev/pci/pciide_piix_reg.h", "sys/dev/pci/pciide_acard_reg.h", "sys/dev/pci/pciide_acer_reg.h", "sys/dev/pci/pciide_amd_reg.h", "sys/dev/pci/pciide_apollo_reg.h", "sys/dev/pci/pciide_cmd_reg.h", "sys/dev/pci/pciide_cy693_reg.h", "sys/dev/pci/pciide_hpt_reg.h", "sys/dev/pci/pciide_ite_reg.h", "sys/dev/pci/pciide_ixp_reg.h", "sys/dev/pci/pciide_jmicron_reg.h", "sys/dev/pci/pciide_natsemi_reg.h", "sys/dev/pci/pciide_nforce_reg.h", "sys/dev/pci/pciide_pdc202xx_reg.h", "sys/dev/pci/pciide_rdc_reg.h", "sys/dev/pci/pciide_sii3112_reg.h", "sys/dev/pci/pciide_sis_reg.h", "sys/dev/pci/pciide_svwsata_reg.h", "sys/dev/pci/cy82c693.c", "sys/arch/amd64/pci/pciide_machdep.c"]
+notes = "M16a: the whole driver, every chip of its table (247 product rows of 18 vendors; the __i386__ CS5535/gcsc row not compiled): the core (pciide_pci_read/write, lookup, match, attach, detach, activate with its per-chip save/restore by fn_addr_eq, compat and native register mapping, bus master DMA mapping, the interrupt handlers, the DMA register accessors, descriptor tables and pciide_dma_init/start/finish over bus_dma, chansetup/mapchan/candisable, compat interrupt through machine::pciide_machdep), default_chip_map, sata, piix/piixsata (PIIX..ICH7), amd756, apollo, cmd/cmd0643_9/cmd680, sii3112/sii3114, cy693, sis/sis96x, natsemi/ns_scx200, acer, hpt, pdc202xx/pdc20268/pdcsata (PDC203xx/205xx), serverworks/svwsata, acard, nforce, artisea, ite, ixp, jmicron, phison, sch, rdc. pciide_jmb_ca is ported but unused (jmb(4) is not). Chip private data (sc_cookie) malloc'ed and written whole, a failed malloc panics (the C dereferences NULL), its accessors check the chip map; the channel of a ChannelSoftc is found by address (pciide_cp) after a checked softc cast (pciide_sc). Kept as in the C: pciide_unmapregs_compat's ctl unmap through cmd_ioh, cmd680's two timing bytes to one register, hpt's compatchan reset, cy693's DMA_mode -1, rdc_setup_channel's PATR clearing. amd64 only in ioconf (pciide* at pci? flags 0x0000, cfdata[86]); QEMU pc's PIIX3 (8086:7010) attaches as on OpenBSD 8.0 (just smoke-wd). Host tests (lookup, table, PIIX timings, SiS bridges)"
 
 [[file]]
 c = "sys/dev/ic/i8042reg.h"
