@@ -10450,26 +10450,38 @@ notes = "replaced-by-cargo: the crate efiboot-arm64 (Cargo.toml, build.rs) and j
 [[file]]
 c = "sys/dev/ata/atareg.h"
 rust = "sys/dev/ata/atareg.rs"
-status = "todo"
-notes = "M16: ATA register and IDENTIFY layouts for wdc(4)/wd(4); amd64 GENERIC only (pciide, wd)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "80c0feb67b2499ab5ae021669512f7af92349b2e"
+deps = []
+notes = "M16a: the whole header: struct ataparams (Ataparams, repr(C), 512 bytes and the word offsets asserted; the byte pairs ordered by target_endian as the C by BYTE_ORDER; from_bytes/as_bytes for the C's bcopy/bcmp of the IDENTIFY block), every WDC_/ATA_/ATAPI_/SATA_ bit, ATAPI_CFG_TYPE as a const fn. Reference-backed test of every define"
 
 [[file]]
 c = "sys/dev/ata/atavar.h"
 rust = "sys/dev/ata/atavar.rs"
-status = "todo"
-notes = "M16: ata_drive_datas and the ATA command structures shared by wdc and wd"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "c6db7f4141f156ef67610f01ccfe36728a44b4c7"
+deps = []
+notes = "M16a: the whole header: struct ata_drive_datas (AtaDriveDatas: Cells; id an UnsafeCell read in place, written through the unsafe id_mut; chnl_softc kept a void pointer; mixed-case PIO_mode.. kept), DRIVE_*, ACAP_*, NERRS_MAX, NXFER, struct ata_atapi_attach (aa_drv_data a &'static reference), T_ATA/T_ATAPI, ATA_CONFIG_*, struct wdc_command (WdcCommand: Cells, shared with the channel while it runs; data a raw pointer), AT_*, WDC_COMPLETE/QUEUED/TRY_AGAIN, CMD_OK/ERR/AGAIN; the prototypes are wdc.rs's and ata.rs's. Reference-backed test of every define"
 
 [[file]]
 c = "sys/dev/ata/satareg.h"
 rust = "sys/dev/ata/satareg.rs"
-status = "todo"
-notes = "M16: SATA status/control registers pciide's SATA-in-IDE-mode chips read"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "f1b407aa7c8c34f8caac6e719353eed2841b02af"
+deps = []
+notes = "M16a: license: NetBSD Foundation BSD-2, kept whole; the whole header: the SStatus, SError and SControl values (u32, mixed-case C names kept), SControl_PMP as a const fn. Reference-backed test of every define"
 
 [[file]]
 c = "sys/dev/ata/wdvar.h"
 rust = "sys/dev/ata/wdvar.rs"
-status = "todo"
-notes = "M16: wd(4)'s softc and wd_xfer"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "8ac3680ba0f011a7bea4daf4c835a7b591b5eab0"
+deps = []
+notes = "M16a: the whole header: struct ata_bio (AtaBio: Cells; lp the in-core label read in place by AtaBio::label; databuf a raw pointer; wd a NonNull), ATA_* bio flags, the error codes, struct wd_softc (WdSoftc, repr(C) Softc; sc_params an UnsafeCell with params/params_mut), WDF_*, the drive states RECAL..READY; wdc_ata_bio is ata_wdc.rs's, wddone wd.rs's, wd_hibernate_io not compiled (HIBERNATE not configured). Reference-backed test of every define"
 
 [[file]]
 c = "sys/dev/ata/ata.c"
@@ -10481,20 +10493,29 @@ notes = "M16: ata_get_params and ata_set_mode for wd(4)"
 [[file]]
 c = "sys/dev/ic/wdcreg.h"
 rust = "sys/dev/ic/wdcreg.rs"
-status = "todo"
-notes = "M16: the IDE taskfile registers"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "e45deddf4ef8aaedc7fcf1241fbcd97eca0f6ba4"
+deps = []
+notes = "M16a: license: Regents BSD-3, kept whole; the whole header: WDCTL_*, WDCS_* with WDCS_BITS (%b), WDCE_*, the WDCC_ commands, SET_FEATURES and WDSF_*, WDSD_*, the ATAPI_ commands, WDCI_* and PHASE_* (all u8). Reference-backed test of every define"
 
 [[file]]
 c = "sys/dev/ic/wdcvar.h"
 rust = "sys/dev/ic/wdcvar.rs"
-status = "todo"
-notes = "M16: wdc_softc, channel_softc and the xfer queue"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "cb3a9e8e937ae5130bf80584c9ce96b452158981"
+deps = []
+notes = "M16a: license: NetBSD Foundation BSD-2, kept whole; the whole header: struct channel_queue (TAILQ of WdcXferChain), struct channel_softc (ChannelSoftc, repr(C) so a front-end embeds it first: Cells, bus tags/handles Cell<Option> with panicking accessors), enum wdc_regs as the newtype WdcRegs with the wdr_* constants (equal values), WDC_NREG, struct channel_softc_vtbl (raw multi transfers take Option<slice>, None the bit bucket) and the CHP_* macros as ChannelSoftc methods, struct wdc_softc (WdcSoftc, repr(C) Softc; dma hooks unsafe fns over dma_arg, dma_init returning Result; channels a slice), struct wdc_xfer (WdcXfer: cmd a void pointer, chp a NonNull; struct atapi_return_args opaque), every WDCF_/WDC_/C_ constant, wdcwait/wait_for_drq/wait_for_unbusy/wait_for_ready as functions (Err(ETIMEDOUT) for -1). Reference-backed test of every define"
 
 [[file]]
 c = "sys/dev/ic/wdcevent.h"
 rust = "sys/dev/ic/wdcevent.rs"
-status = "todo"
-notes = "M16: the WDCDEBUG event trace ring; built only with WDC_DEBUG like the C"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "38b8a738dcad8a93b9c8c0cf80fcb37a7a15b4e2"
+deps = []
+notes = "M16a: license: Sapuntzakis BSD-3, kept whole; enum wdcevent_type (WdceventType, repr(u8)) and the WDC_LOG_* helpers: with feature wdcdebug (option WDCDEBUG) they record through wdc.rs's wdc_log, without it they are empty functions as the C's empty macros. WDC_LOG_ATAPI_CMD logs at most the 18 command bytes its 20-byte record holds (the C would overrun it)"
 
 [[file]]
 c = "sys/dev/ic/wdc.c"
