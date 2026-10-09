@@ -24,9 +24,10 @@
 
 ## Status
 
-Status: M16c (network drivers: pcn, ne, fxp with its microcode, dc, and em on igb and e1000e),
-M16b (USB drivers), M16e (platform drivers) and M16f (arm64 platform) met; the rest of M16
-(M16a, M16d, M16g: storage, console/virtio/legacy, install images) under way.
+Status: M16d (console, virtio and legacy devices: the PS/2 keyboard and mouse, viogpu, viomb,
+viornd with rnd(4)'s entropy pool, lpt, the PC speaker, eap with midi), M16c (network
+drivers), M16b (USB drivers), M16e (platform drivers) and M16f (arm64 platform) met; the rest
+of M16 (M16a, M16g: storage, install images) under way.
 
 | Milestone | Scope | State |
 |---|---|---|
@@ -61,7 +62,8 @@ M16b (USB drivers), M16e (platform drivers) and M16f (arm64 platform) met; the r
 | M16e | Platform drivers: UKC (`boot -c`), ppb(4), acpidmar(4) (VT-d and AMD-Vi), iic(4) with ichiic(4) and piixpm(4), ipmi(4) with the watchdog and SMBIOS, tpm(4) on swtpm, acpicpu(4) | met |
 | M16b | USB drivers: ehci(4), uhci(4), ohci(4), ums(4) and uwacom(4) over hidms, uhid(4), ugen(4) with usbdevs(8), cdce(4), ucom(4) with uftdi(4), uaudio(4); ehci, and a write through ohci, behave as on OpenBSD 8.0 in QEMU | met |
 | M16c | Network drivers: pcn(4), ne(4) (ne2000, dp8390, rtl80x9), fxp(4) with loadfirmware(9) and its microcode, dc(4); the inphy, lxtphy and dcphy PHYs; em(4) on igb and e1000e. tulip and igb pass no traffic, as on OpenBSD 8.0 in QEMU | met |
-| M16a, M16d, M16g | QEMU drivers, the other three parts: storage, console/virtio/legacy devices, install images | next |
+| M16d | Console, virtio and legacy devices: pckbc(4), pckbd(4) and pms(4); viogpu(4), viomb(4), viornd(4) with rnd(4)'s entropy pool and /dev/random, viocon(4) (cargo feature); lpt(4); pcppi(4) and spkr(4); eap(4) with midi(4) | met |
+| M16a, M16g | QEMU drivers, the other two parts: storage, install images | next |
 | M17 | Real hardware and virtualisation (vmm, vmd; optional) | next |
 
 Stage 2 of the diagnostic tools (ps, fstat, vmstat, df) is also met. Exit criteria and dates are
@@ -176,6 +178,16 @@ On one VM, with OpenBSD's own binaries from the ramdisk:
   CCID command (`smoke-ugen`); cdce(4) on usb-net pings the gateway (`smoke-cdce`); ucom(4)
   over uftdi(4) on usb-serial carries text both ways (`smoke-ucom`); uaudio(4) plays the tone
   on usb-audio (`smoke-uaudio`).
+- PS/2, amd64: keys sent with QEMU's `sendkey` reach the shell through pckbc(4) and pckbd(4),
+  and the PS/2 mouse gives wsmouse(4) events through pms(4) (`smoke-pckbc`); opening the
+  keyboard fails now and then, as on OpenBSD 8.0 (a race in the C), so the smoke retries.
+- virtio: QEMU's balloon command inflates and deflates viomb(4) (its sensors and `vmstat -s`
+  follow), viornd(4) feeds rnd(4)'s pool and `/dev/random` reads (`smoke-virtio`, both
+  archs); viogpu(4) on arm64 carries the console, read back from a QEMU screendump
+  (`smoke-viogpu`).
+- Legacy devices, amd64: bytes written to `/dev/lpt0` reach QEMU's parallel port (`smoke-lpt`);
+  the console bell and a spkr(4) tune reach QEMU's PC speaker through pcppi(4) (`smoke-bell`);
+  eap(4) plays the tone on QEMU's ES1370, with midi0 on its UART (`smoke-eap`).
 
 Outside `just smoke`, because they take minutes under TCG (the user requires them at every
 milestone close): `just smoke-install` boots `bsd.rd` through our efiboot and lets OpenBSD's
@@ -385,7 +397,7 @@ From `cargo xtask ports status` at the commit of this README:
 
 | todo | wip | ported | skipped | total |
 |---:|---:|---:|---:|---:|
-| 123 | 140 | 1070 | 37 | 1370 |
+| 96 | 139 | 1102 | 37 | 1374 |
 
 The tracker lists the files claimed by the milestones so far, not all of OpenBSD's `sys/`.
 `wip` files are in use with visible stubs. Per subsystem: [docs/PORTING.md](docs/PORTING.md).
