@@ -10531,16 +10531,20 @@ notes = "M16a: the whole file: wdc_cd, wdc_default_vtbl and the default register
 [[file]]
 c = "sys/dev/ata/ata_wdc.c"
 rust = "sys/dev/ata/ata_wdc.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "10c3e29b7dc7b162a93822770b5535a07f41a030"
 deps = ["sys/dev/ic/wdc.c", "sys/dev/ata/wdvar.h"]
-notes = "M16: wd(4)'s transfers through a wdc channel"
+notes = "M16a: the whole file but HIBERNATE (not configured: wd_hibernate_io not compiled): wdcdebug_wd_mask (feature wdcdebug), wdc_ata_bio (&'static ata_bio), wdc_ata_bio_start, _wdc_ata_bio_start (again/do_pio/intr/timeout gotos as labelled blocks and a loop; LBA28, LBA48 and CHS; PIO single/multiple and DMA through the controller hooks, EINVAL falling back to PIO), wdc_ata_bio_intr, wdc_ata_bio_kill_xfer, wdc_ata_bio_done, wdc_ata_ctrl_intr (the RECAL..READY switch with its fallthroughs as a state loop), wdc_ata_err; the label fields read in place (AtaBio::label). Host tests: a task file emulated behind the channel vtbl (one ATA disk): wdcprobe, IDENTIFY, PIO mode selection, a polled READ MULTIPLE after RECAL/SET FEATURES/SET MULTI and a polled WRITE"
 
 [[file]]
 c = "sys/dev/ata/wd.c"
 rust = "sys/dev/ata/wd.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "eeb3deda8212a53da71493f3f02167a7e30414f6"
 deps = ["sys/dev/ata/ata.c", "sys/dev/ata/ata_wdc.c"]
-notes = "M16: wd(4) ATA disks; criterion: a QEMU IDE disk (piix3-ide / -machine pc) mounted as wd0 on amd64"
+notes = "M16a: the whole driver but B_FORMAT (not defined: wdformat), WD_DUMP_NOT_TRUSTED (not defined) and HIBERNATE: wd_ca/wd_cd, wdprobe, wdattach (model string in wd_model), wdactivate, wddetach, wdstrategy, wdstart, __wdstart, wddone, wdrestart, wdread/wdwrite (physio), wdopen (wdopen_noproc for wdsize), wdclose, wdgetdefaultlabel, wdgetdisklabel (the label built in a local and installed as sd.rs does), wdioctl (DIOCRLDINFO's label malloc'ed as in the C; the rest to wdc_ioctl), wdsize, wddump (nothing calls it yet: dumpsys not ported), wd_get_params (always on sc_params, as every caller), wd_flushcache (keeps the C's test of ERR_NODEV against the AT_* flags), wd_standby. bdevsw 0 / cdevsw 3 on both archs (NWD 1 on amd64, 0 on arm64 as GENERIC). Host tests (model string, strncpy)"
 
 [[file]]
 c = "sys/dev/pci/pciidereg.h"
