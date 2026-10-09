@@ -1416,7 +1416,7 @@ status = "wip"
 upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "7703ec138db0f65b7bedc76cdaed1423363db7f0"
 deps = ["sys/uvm/uvm.h", "sys/uvm/uvmexp.h", "sys/uvm/uvm_page.c", "sys/uvm/uvm_pager.c", "sys/uvm/uvm_amap.c", "sys/uvm/uvm_aobj.c", "sys/uvm/uvm_anon.c", "sys/uvm/uvm_map.c", "sys/uvm/uvm_km.c", "sys/uvm/uvm_addr.c"]
-notes = "uvm_init: page system, uvm_map_init, uvm_km_init (kernel_map), uvmfault_init, pmap_init, kmeminit, uvm_pager_init, amap_init, uao_create (kernel swap), uvm_anon_init, the bestfit switch of kernel_map (kmem_map waits for kmeminit's suballoc) run; uvm_km_page_init, dma_alloc_init, uvm_km_page_lateinit and uvm_init_percpu's counters report themselves unported; uvmexp is exported under its C name for the amd64 interrupt stubs' V_INTR; vm_min_kernel_address is a runtime value (amd64 shifts the kernel map above its direct map) and uvm_maxkaddr is raised to it before uvm_km_init; M11a: uvm_init_percpu calls uvm_anon_init_percpu; uvmexp_counters stay static atomics, so counters_alloc_ncpus (now in subr_percpu.rs) is not called: a deviation, no longer reported"
+notes = "uvm_init: page system, uvm_map_init, uvm_km_init (kernel_map), uvmfault_init, pmap_init, kmeminit, uvm_pager_init, amap_init, uao_create (kernel swap), uvm_anon_init, the bestfit switch of kernel_map (kmem_map waits for kmeminit's suballoc) run; uvm_km_page_init, uvm_km_page_lateinit and uvm_init_percpu's counters report themselves unported; uvmexp is exported under its C name for the amd64 interrupt stubs' V_INTR; vm_min_kernel_address is a runtime value (amd64 shifts the kernel map above its direct map) and uvm_maxkaddr is raised to it before uvm_km_init; M11a: uvm_init_percpu calls uvm_anon_init_percpu; uvmexp_counters stay static atomics, so counters_alloc_ncpus (now in subr_percpu.rs) is not called: a deviation, no longer reported; M16d: dma_alloc_init runs (kern/dma_alloc.rs)"
 
 [[file]]
 c = "sys/uvm/uvm_io.c"
@@ -1998,6 +1998,15 @@ upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
 upstream_blob = "dd371c336ccf71c0cefae173d992cd79f2e33be4"
 deps = ["sys/sys/time.h"]
 notes = "M8: clock_ymdhms_to_secs, clock_secs_to_ymdhms (returns the ClockYmdhms), leapyear and the month table; i64 day count (the C's int overflows past year 6000), a month above 12 adds no days; host tests: known dates, 1970 to 2105 round trip"
+
+[[file]]
+c = "sys/kern/dma_alloc.c"
+rust = "sys/kern/dma_alloc.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "08e5e56ca0476e095b2fe07d4e0982a69882a259"
+deps = ["sys/kern/subr_pool.c"]
+notes = "M16d: the whole file, for viornd(4) and viomb(4): dmapools (dma16 .. dma65536 on kp_dma_contig), dma_alloc_init (called by uvm_init after kmeminit, replacing its unported! report), dma_alloc_index, dma_alloc, dma_free; deviations: dmanames is a compile-time table of &'static str (pool_init keeps the name), dma_alloc_index returns Option, dma_alloc Option<NonNull<u8>>; the earlier ports that stood in malloc(9) for it (scsiconf, scsi_ioctl, atascsi, ahci, sd, cd, softraid_crypto) keep their notes; host tests (bucket choice, names, a PR_ZERO item round trip)"
 
 [[file]]
 c = "sys/sys/poll.h"
@@ -10869,9 +10878,11 @@ notes = "M16: viogpu(4) over rasops/wsdisplay (M13); arm64 GENERIC only (comment
 [[file]]
 c = "sys/dev/pv/viomb.c"
 rust = "sys/dev/pv/viomb.rs"
-status = "todo"
-deps = ["sys/dev/pv/virtio.c"]
-notes = "M16: viomb(4) memory balloon; criterion: QEMU's balloon command inflates and deflates it, both archs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "de89a48d8c924d072e18e811f53c4d65fce9be11"
+deps = ["sys/dev/pv/virtio.c", "sys/kern/dma_alloc.c"]
+notes = "M16d: license: BSD-2 (NetBSD, two notices kept whole); the whole file: viomb_ca/cd, match, attach (inflate and deflate queues, dma_alloc'ed frame number array and its map, taskq viomb, the desired/current sensors), viomb_config_change, viomb_worker, viomb_inflate (uvm_pglistalloc below dma_constraint), viomb_deflate, viomb_read_config, viomb_vq_dequeue (Result), viomb_inflate_intr, viomb_deflate_intr; the C's quirks kept: sensors lag the last request, a short deflate records i - 1 entries, request lengths are nvpages words; deviations: VIRTIO_PAGE_SIZE == PAGE_SIZE a const assertion (the C's #error), viomb_nvpages host-tested, VIOMBDEBUG behind VIRTIO_DEBUG; viomb* at virtio? on both archs; smoke-virtio: balloon 384 of 512 MB then 512 give raw0=134217728/raw1=133169152 then 0/1048576, as OpenBSD 8.0 does at the same scale"
 
 [[file]]
 c = "sys/dev/pv/viocon.c"
@@ -11790,9 +11801,11 @@ notes = "M16e: the whole file: piixpm_ids[] (14), piixpm_match, piixpm_attach (P
 [[file]]
 c = "sys/dev/pv/viornd.c"
 rust = "sys/dev/pv/viornd.rs"
-status = "todo"
-deps = ["sys/dev/pv/virtio.c"]
-notes = "M16: viornd(4); criterion: QEMU's virtio-rng feeds rnd(4) (enqueue counts grow), both archs; it also gives rnd(4) real entropy under QEMU"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "edb5d3c3717406536a7987393c4aedf969703a8f"
+deps = ["sys/dev/pv/virtio.c", "sys/kern/dma_alloc.c"]
+notes = "M16d: the whole file: viornd_ca/cd (CD_COCOVM), match, attach (dma_alloc'ed 16-byte buffer, its map, one queue, the first request a tick after attach), viornd_vq_done (the words to enqueue_randomness, the next request 15 << shift s later unless VIORND_ONESHOT), viornd_tick; deviations: the interval and word count are host-tested functions (viornd_interval, viornd_nwords), VIORND_DEBUG messages behind a const; gap: enqueue_randomness is rnd.c's M3 placeholder (unported! entropy pool), so the words reach no pool; viornd* at virtio? on both archs; smoke-virtio (amd64: viornd0 at virtio2, irq69/viornd0:1 1 as on OpenBSD 8.0; arm64: viornd0 at virtio28, one interrupt)"
 
 [[file]]
 c = "sys/sys/gpio.h"
