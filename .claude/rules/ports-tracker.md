@@ -20,7 +20,7 @@ status = "ported"                         # todo | wip | ported | skipped
 upstream_commit = "<full hash>"           # [meta].pinned at port time (wip, ported)
 upstream_blob   = "<blob hash>"           # git -C reference/openbsd-src rev-parse HEAD:<c>  (ported)
 deps   = ["sys/sys/types.h"]              # C paths that must be ported first (feeds `ports next`)
-license = "none"                          # optional: the C file has no licence text (no <LICENSES> zone)
+license = "none"                          # optional: the C file has no licence text (the .rs holds only the author's block)
 notes  = ""                               # REQUIRED when skipped: replaced-by-<x> | provided-by-core |
                                           # deferred-driver | license: <x> | not-applicable, then why
 
@@ -41,7 +41,8 @@ reason = "project helper: visible stubs for unported subsystems"
 - Do not bulk-import thousands of C files as `todo`; add entries when a milestone claims them.
 - Zone markers (M15): `cargo xtask ports check` validates `/* <LICENSES> */`, `/* <CODE> */` and
   `/* <TESTS> */` in every `.rs` under `sys/` and `tools/` (`rust-kernel.md`, file layout).
-  `<LICENSES>` must be in a file that has a `[[file]]` entry with status `wip` or `ported`, unless
-  the entry says `license = "none"` (a C file with no licence text, or a generated file; the
-  `.S` ports whose notice stays in the `.S` beside the `.rs`), and may not be in any other
-  file (`[[extra]]` or untracked). A `tests.rs` is an error.
+  `<LICENSES>` is in every file and opens with the author's ISC block (`scope-and-stubs.md`,
+  authorship). A file with a `[[file]]` entry of status `wip` or `ported` keeps the original
+  notice after it, unless the entry says `license = "none"` (the C file has no licence text,
+  or is generated; the `.S` ports whose notice stays in the `.S` beside the `.rs`): then, as in
+  an `[[extra]]` or an untracked file, the author's block is alone. A `tests.rs` is an error.

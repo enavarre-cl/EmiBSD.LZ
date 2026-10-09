@@ -1,6 +1,6 @@
 ISC License
 
-Copyright (c) 2026 enavarre <enavarre@outlook.com>
+Copyright (c) 2026 Emilio Navarrete Lineros <enavarre@outlook.com>
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -29,7 +29,10 @@ notices in the HPND style (the IPsec authors, Carnegie Mellon, M.I.T., the
 Open Software Foundation, Julian Elischer / TRW Financial Systems), Intel's
 EFI notice (the UEFI headers of sys/stand/efi/include, from FreeBSD), and
 public domain. Files without license text keep their copyright lines as
-they are. Provenance
+they are. Before the original notice, the same zone opens with the ISC
+notice of Emilio Navarrete Lineros, the author of the Rust translation;
+files that are not ports of a licensed source carry that notice alone.
+Works derived from this repository keep it. Provenance
 per file is recorded in ports.toml; the upstream commit is recorded in
 reference/PINNED.md. The names of OpenBSD contributors may not be used to
 endorse or promote this project without their written permission

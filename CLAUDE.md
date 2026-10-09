@@ -16,6 +16,10 @@ Everything in this repository (code, comments, docs, commits) is in English.
   `crate::arch::amd64` / `crate::arch::arm64` are never named outside `sys/arch/` and `sys/machine/`.
 - `reference/` is read-only. Never edit it, never copy C verbatim (`.claude/rules/reference-readonly.md`).
 - Every ported file keeps the original `$OpenBSD$` line and the full copyright/license block.
+- Every `.rs` opens its `<LICENSES>` zone with the author's ISC block, "Copyright (c) 2026 Emilio
+  Navarrete Lineros <enavarre@outlook.com>": first, before the original notice (latest change
+  first), or alone. Derivative works and migrations of this code keep it first in every file;
+  nobody else's name replaces it (`.claude/rules/scope-and-stubs.md`, authorship).
 - `ports.toml` is updated in the same commit as the port it describes.
 - No `std` outside `sys/arch/host/`, `#[cfg(test)]` code and `tools/xtask/`.
 - Stable toolchain, pinned in `rust-toolchain.toml`. No nightly features, ever.

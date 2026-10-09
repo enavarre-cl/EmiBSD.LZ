@@ -20,8 +20,10 @@ Applies to every port of a C file from `reference/openbsd-src/sys/` into `sys/`.
   between `/* <LICENSES> */` and `/* </LICENSES> */`, then, inside `/* <CODE> */` ...
   `/* </CODE> */`, the `//!` docs with `Upstream: <c path> @ <12-hex>` and a `## Deviations`
   list. When reading a ported file, read the code zone (`sed -n '/<CODE>/,/<\/CODE>/p' file`);
-  the licence text never changes. A C file with no licence text gets no LICENSES zone and
-  `license = "none"` on its `ports.toml` entry.
+  the licence text never changes. The zone opens with the author's ISC block, then one blank
+  line and the original one(s) (`scope-and-stubs.md`, authorship). A C file with no
+  licence text gets `license = "none"` on its `ports.toml` entry, and its zone holds the
+  author's block alone.
 - Logic that can run on the host gets an inline `#[cfg(test)] mod tests { .. }` inside the
   `/* <TESTS> */` ... `/* </TESTS> */` zone at the end of the same file, however long it is
   (no `tests.rs`); constants that mirror C headers get a reference-backed `#[ignore]` test

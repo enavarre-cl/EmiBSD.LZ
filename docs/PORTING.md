@@ -27,14 +27,22 @@ licence block are copied verbatim from the C file; the licence block sits betwee
 `/* <LICENSES> */` and `/* </LICENSES> */` marker lines. Everything else is inside
 `/* <CODE> */` ... `/* </CODE> */`, and the tests, inline, in `/* <TESTS> */` ... `/* </TESTS> */`
 at the end (only in files that have tests). `cargo xtask ports check` validates the markers, their
-order, that `<LICENSES>` is only in ports and `<TESTS>` only where there is a `mod tests`. A file
-whose C has several notices keeps all of them inside one pair of markers; a C file with no
-licence text gets no `<LICENSES>` zone and `license = "none"` on its `ports.toml` entry. To read a
+order, that `<LICENSES>` opens with the author's ISC block (before the original notice, or alone)
+and `<TESTS>` is only where there is a `mod tests`. A file whose C has several notices keeps all
+of them inside one pair of markers, after the author's block and one blank line; a C file with
+no licence text gets `license = "none"` on its `ports.toml` entry and the author's block alone. To read a
 ported file, read its code zone (`sed -n '/<CODE>/,/<\/CODE>/p' <file>`).
 
 ```rust
 /*	$OpenBSD: strlcpy.c,v 1.9 2019/01/25 00:19:26 millert Exp $	*/
 /* <LICENSES> */
+/*
+ * Copyright (c) 2026 Emilio Navarrete Lineros <enavarre@outlook.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * ...
+ */
+
 /*
  * Copyright (c) 1998, 2015 Todd C. Miller <millert@openbsd.org>
  *

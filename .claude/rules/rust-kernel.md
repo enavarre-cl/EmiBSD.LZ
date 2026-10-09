@@ -41,10 +41,11 @@ paths:
 - File layout (M15): every `.rs` under `sys/` and `tools/` is split into zones, each opened and
   closed by a comment line of its own, in this order, and nothing else sits outside them but
   blank lines and the leading `/* $OpenBSD ... */` id lines (or a generated-file banner):
-  - `/* <LICENSES> */` ... `/* </LICENSES> */`: ported files only. The `/* $OpenBSD ... */`
-    line(s) stay above the opening marker; the license block(s) are inside (the markers only
-    mark, the licence text stays verbatim). A C file with no licence text has no zone
-    (`license = "none"` in `ports.toml`);
+  - `/* <LICENSES> */` ... `/* </LICENSES> */`: every file. The `/* $OpenBSD ... */` line(s)
+    stay above the opening marker. The author's ISC block comes first (`scope-and-stubs.md`,
+    authorship), then, after one blank line, a port's original licence block(s), verbatim
+    (the markers only mark). A port of a C file with no licence text
+    (`license = "none"`), an `[[extra]]` and every untracked file hold the author's block alone;
   - `/* <CODE> */` ... `/* </CODE> */`: everything that is not a licence or a test, in the
     section order below, one blank line between sections, empty sections omitted;
   - `/* <TESTS> */` ... `/* </TESTS> */`: only in files that have tests: the inline

@@ -1,3 +1,21 @@
+/* <LICENSES> */
+/*
+ * Copyright (c) 2026 Emilio Navarrete Lineros <enavarre@outlook.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+/* </LICENSES> */
+
 /* <CODE> */
 //! `xtask`: host-side developer tooling for EmiBSD.
 //!
@@ -695,19 +713,16 @@ fn ports_check(root: &Path) -> Result<()> {
 }
 
 /// The zone markers of every `.rs` under `sys/` and `tools/` (layout.rs), with the licence
-/// policy of `ports.toml`: a file that is the port of a C file keeps its notice in a
-/// `<LICENSES>` zone (unless its entries say `license = "none"`), any other file has none.
+/// policy of `ports.toml`: the `<LICENSES>` zone opens with the author's block, and the port of
+/// a C file with licence text keeps its notice after it; any other file (not a port, or the port of a
+/// C file with no licence, `license = "none"`) holds the author's block alone.
 fn check_layout(root: &Path, ports: &Ports, errors: &mut Vec<String>) -> Result<()> {
     use layout::Licenses;
 
     let mut policy: HashMap<&str, Licenses> = HashMap::new();
-    let mut none: HashSet<&str> = HashSet::new();
     for e in &ports.files {
         if e.rust.is_empty() {
             continue;
-        }
-        if e.license == "none" {
-            none.insert(e.rust.as_str());
         }
         if !matches!(e.license.as_str(), "" | "none") {
             let c = &e.c;
@@ -716,11 +731,18 @@ fn check_layout(root: &Path, ports: &Ports, errors: &mut Vec<String>) -> Result<
                 e.license
             ));
         }
-        let wants = e.status != Status::Todo && e.status != Status::Skipped && e.license != "none";
-        let slot = policy.entry(e.rust.as_str()).or_insert(Licenses::Allowed);
-        if wants {
-            *slot = Licenses::Required;
-        }
+        let active = e.status != Status::Todo && e.status != Status::Skipped;
+        let this = match (active, e.license == "none") {
+            (true, false) => Licenses::Original,
+            (_, true) => Licenses::Own,
+            (false, false) => Licenses::Either,
+        };
+        let slot = policy.entry(e.rust.as_str()).or_insert(this);
+        *slot = match (*slot, this) {
+            (Licenses::Original, _) | (_, Licenses::Original) => Licenses::Original,
+            (Licenses::Own, _) | (_, Licenses::Own) => Licenses::Own,
+            _ => Licenses::Either,
+        };
     }
     let mut files = Vec::new();
     for tree in ["sys", "tools"] {
@@ -739,18 +761,9 @@ fn check_layout(root: &Path, ports: &Ports, errors: &mut Vec<String>) -> Result<
             ));
             continue;
         }
-        let lic = policy
-            .get(rel.as_str())
-            .copied()
-            .unwrap_or(Licenses::Forbidden);
+        let lic = policy.get(rel.as_str()).copied().unwrap_or(Licenses::Own);
         let src = fs::read_to_string(f).map_err(|e| format!("{rel}: {e}"))?;
-        let found = layout::check(&rel, &src, lic);
-        if none.contains(rel.as_str()) && src.lines().any(|l| l == "/* <LICENSES> */") {
-            errors.push(format!(
-                "{rel}: has a <LICENSES> zone but its ports.toml entry says license = \"none\""
-            ));
-        }
-        errors.extend(found);
+        errors.extend(layout::check(&rel, &src, lic));
     }
     Ok(())
 }

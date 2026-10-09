@@ -1,3 +1,21 @@
+/* <LICENSES> */
+/*
+ * Copyright (c) 2026 Emilio Navarrete Lineros <enavarre@outlook.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+/* </LICENSES> */
+
 /* <CODE> */
 //! `cargo xtask gen-syscalls [--check]`: what `sys/kern/makesyscalls.sh` does for the C tree,
 //! for the Rust tree. Reads `reference/openbsd-src/sys/kern/syscalls.master` and writes
@@ -701,11 +719,16 @@ pub fn generate(root: &Path) -> Result<Vec<(&'static str, String)>> {
     ])
 }
 
-/// The generated source in the zones of `layout.rs`: the `$OpenBSD$` id line (the C files
-/// carry no notice, `license = "none"` in ports.toml), then everything else in `<CODE>`.
+/// The generated source in the zones of `layout.rs`: the `$OpenBSD$` id line, the author's
+/// block alone in `<LICENSES>` (the C files carry no notice, `license = "none"` in ports.toml),
+/// then everything else in `<CODE>`.
 fn zoned(src: &str) -> String {
     let (id, rest) = src.split_once('\n').unwrap_or((src, ""));
-    format!("{id}\n\n/* <CODE> */\n{}\n/* </CODE> */\n", rest.trim())
+    let author = crate::layout::AUTHOR_BLOCK;
+    format!(
+        "{id}\n\n/* <LICENSES> */\n{author}/* </LICENSES> */\n\n/* <CODE> */\n{}\n/* </CODE> */\n",
+        rest.trim()
+    )
 }
 
 /// Formats generated source with the workspace's `rustfmt.toml`, so `just fmt` and
