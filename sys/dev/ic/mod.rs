@@ -26,6 +26,7 @@ pub mod ahcivar;
 pub mod com;
 pub mod comreg;
 pub mod comvar;
+pub mod dc;
 pub mod dcreg;
 pub mod i8253reg;
 pub mod mc146818reg;
