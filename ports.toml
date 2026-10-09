@@ -10900,36 +10900,73 @@ deps = ["sys/dev/ic/am79900reg.h", "sys/dev/ic/lancereg.h"]
 notes = "M16: pcn(4); criterion: QEMU's pcnet pings 10.0.2.2; amd64 GENERIC only"
 
 [[file]]
+c = "sys/dev/firmload.c"
+rust = "sys/dev/firmload.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "e8ade9e3ece479b0f0eee03b94585228500d84cb"
+deps = ["sys/kern/vfs_lookup.c", "sys/kern/vfs_vops.c"]
+notes = "M16c: the whole file but RAMDISK_HOOKS (not configured, so no retry under /mnt/etc/firmware): loadfirmware(9) returning Result<(NonNull<u8>, usize), Errno> instead of the two out-parameters; EIO without a current process or a root vnode in use; ENAMETOOLONG, ENOENT, EINVAL (not a regular file or empty), E2BIG (over FIRMWARE_MAX), ENOMEM; the caller frees the M_DEVBUF buffer; host tests (no root, name too long)"
+
+[[file]]
+c = "sys/dev/mii/inphyreg.h"
+rust = "sys/dev/mii/inphyreg.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "ec286d3d558bd3894b6f3374ba8fec9eb8a243f4"
+deps = []
+notes = "M16c: license: NetBSD Foundation BSD-2, kept whole; the whole header: MII_INPHY_* register numbers (u32) and the SCR_/SCTRL_/SCTRL2_/LEDMASK_ bits (u16); reference-backed test"
+
+[[file]]
+c = "sys/dev/mii/inphy.c"
+rust = "sys/dev/mii/inphy.rs"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "d0f494942c1fb2beaa4f4a427e5e2406b31aef01"
+deps = ["sys/dev/mii/mii_physubr.c", "sys/dev/mii/miidevs.h", "sys/dev/mii/inphyreg.h"]
+notes = "M16c: license: NetBSD Foundation BSD-2 plus Manuel Bouyer BSD-2, kept whole; the whole file: inphy_ca/inphy_cd, inphy_funcs, inphys[] (i82555, i82562EM, i82562ET, i82562G), inphymatch, inphyattach, inphy_service (Result), inphy_status; inphy* at mii? on amd64 (fxp's PHY; QEMU: inphy0 at fxp0 phy 1: i82555, rev. 4)"
+
+[[file]]
 c = "sys/dev/ic/fxpreg.h"
 rust = "sys/dev/ic/fxpreg.rs"
-status = "todo"
-notes = "M16: i8255x registers"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "0996e2b7eefacfb1d4aae2ab033e3a92c06d5c9d"
+notes = "M16c: license: kept whole; the whole header: registers, command blocks (repr(C)) and the receive frame area; struct fxp_cb_nop is unused and left out"
 
 [[file]]
 c = "sys/dev/ic/fxpvar.h"
 rust = "sys/dev/ic/fxpvar.rs"
-status = "todo"
-notes = "M16: fxp_softc"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "6fa8c541507b15874e754066fc6dd7f95bd55114"
+notes = "M16c: license: kept whole; FxpSoftc, struct fxp_ctrl, the macros as methods; see the file doc for the deviations"
 
 [[file]]
 c = "sys/dev/microcode/fxp/rcvbundl.h"
 rust = "sys/dev/microcode/fxp/rcvbundl.rs"
-status = "todo"
-notes = "M16: Intel receive-bundling microcode (Intel copyright, kept whole); fxp loads it as firmware with loadfirmware(9)"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "5383855593e611ccc3722e405298ebabd32e0a30"
+notes = "M16c: license: Intel notice, kept whole; the receive-bundling ('CPUSaver') microcode arrays of the C header as const u32 arrays with their *_DWORD patch indexes and FXP_FIRMWARE (the seven files build.c writes); fxp loads them from /etc/firmware/fxp-* with loadfirmware(9), the files being built by dev/microcode/fxp/build.c in the userland build"
 
 [[file]]
 c = "sys/dev/ic/fxp.c"
 rust = "sys/dev/ic/fxp.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "fde5d6a4f0394343eb630d97e5deac6831e3fec8"
 deps = ["sys/dev/ic/fxpreg.h", "sys/dev/ic/fxpvar.h", "sys/dev/microcode/fxp/rcvbundl.h"]
-notes = "M16: fxp(4); criterion: QEMU's i82559er/i82557b pings 10.0.2.2; amd64 GENERIC only; the fxp-* firmware files come from dev/microcode/fxp/build.c in the userland build"
+notes = "M16c: the whole driver (SMALL_KERNEL not defined, DEBUG not defined; the microcode is loaded through loadfirmware(9)): fxp_attach, fxp_detach, fxp_activate, fxp_shutdown, fxp_init, fxp_stop, fxp_intr, fxp_rxeof, fxp_start, fxp_ioctl, fxp_mediachange/status, the EEPROM and MDI access, fxp_load_ucode, the RFA/CBL lists; QEMU i82559er (rev 9, i82559S, inphy0); deviations in the file doc: DMA structures through Dma views, Result returns, fxp_load_ucode refuses a file over MAXUCODESIZE; amd64 GENERIC only (fxp* at cardbus? is out of scope)"
 
 [[file]]
 c = "sys/dev/pci/if_fxp_pci.c"
 rust = "sys/dev/pci/if_fxp_pci.rs"
-status = "todo"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "4c1687db539b99d78663e759f7768091bd974628"
 deps = ["sys/dev/ic/fxp.c"]
-notes = "M16: fxp at pci"
+notes = "M16c: the whole file: fxp_pci_devices, fxp_pci_match, fxp_pci_attach, fxp_pci_detach, fxp_pci_activate; fxp* at pci? in the amd64 ioconf (cfdata[77]); QEMU: fxp0 at pci0 dev 2 function 0 'Intel 82559ER' rev 0x09, i82559S: apic 0 int 22, address 52:54:00:12:34:56"
 
 [[file]]
 c = "sys/dev/ic/dp8390reg.h"
