@@ -2,13 +2,14 @@
 
 Milestone: **M16b, M16e and M16f done** (USB, platform drivers, arm64 platform); the rest of M16
 (M16a, M16c, M16d, M16g: storage, network, console/virtio/legacy, install images) under way,
-then M17 (real hardware, vmm). Updated: 2026-10-08.
+then M17 (real hardware, vmm). Updated: 2026-10-09.
 
 Done:
 - M16b: ehci, uhci, ohci; ums/uwacom over hidms, uhid, ugen and usbdevs(8), cdce, ucom with
   uftdi, uaudio. ehci, and a write through ohci, behave as on OpenBSD 8.0 in QEMU.
 - M16f: agintc (GICv3, ITS), smmu (SMMUv2/v3), gpio(4), plgpio, gpiokeys (as on OpenBSD 8.0).
 - M16e: UKC (`boot -c`), ppb, acpidmar, iic with ichiic and piixpm, ipmi, tpm on swtpm, acpicpu.
+- 2026-10-09: `smoke-all`'s outer watchdog (`TIMEOUT`); long runs watched (large-ports.md).
 
 Next:
 - M16a, M16c, M16d, M16g (`ci-full` once at M16's close); then M17.

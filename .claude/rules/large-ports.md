@@ -20,3 +20,25 @@ code, and to every prompt that launches one.
   subagent that ports it.
 - **Stop cleanly.** An agent that feels its context running low stops in a committed state,
   writes the handoff note, and only then hands back, saying where the note is.
+
+## Long runs in the background
+
+Decided by the user on 2026-10-09, after a recipe sat hung for 2 h 30 min in a `ci-full` while
+its log stayed still, and a `cargo test -p bsd -- hmac softraid_crypto` an agent had started
+was found hung five hours after that agent handed back.
+
+- **Watch every long background run.** `just ci`, `just ci-full`, `just diff-openbsd`,
+  `just comp`, the host tests and any other run of minutes goes with a watcher that warns
+  when its log has not changed for ten minutes (e.g. a `Monitor` or a loop that compares the
+  log's modification time with the clock, `stat -f %m <log>` on macOS). A still log is
+  looked at at once: which process is it, is it on CPU (`ps -o pid,etime,%cpu,state,command`),
+  what is its last line. `smoke-all` stops a hung recipe by itself (`testing.md`); the rest
+  of a run has no such guard.
+- **Report progress from the clock, not only from the last line.** Every progress report
+  says when the log last changed (`ls -l`/`stat`), so a run that stopped is never reported as
+  running.
+- **Finish what you started before handing back.** An agent, before its final report, waits
+  for or stops every background task it launched (shells, `Monitor`s, `cargo test`, QEMU) and
+  checks with `ps` that none is left; the report names any it had to kill. The coordinator
+  checks the same for its subagents after each hand-back.
+- Every prompt that launches an agent which runs these commands repeats these three points.
