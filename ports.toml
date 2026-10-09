@@ -11536,8 +11536,11 @@ notes = "M16: pcscp(4); criterion: a disk on QEMU's am53c974 (and dc390) mounted
 [[file]]
 c = "sys/dev/ic/dcreg.h"
 rust = "sys/dev/ic/dcreg.rs"
-status = "todo"
-notes = "M16: DEC 21x4x (tulip) registers"
+status = "ported"
+upstream_commit = "3ce1f3f79392ae4d60ce67bea5835d517caaa2ca"
+upstream_blob = "4efe9303168643240eba4cb2f3702cbd4238b08f"
+deps = ["sys/dev/mii/miivar.h", "sys/netinet/if_ether.h"]
+notes = "M16c: license: BSD-4 (Bill Paul), kept whole; the whole header: registers and bits, struct dc_desc (repr(C), words read and written one at a time, volatile, in host order through DcSoftc accessors), dc_list_data (offsets for the syncs), dc_swdesc (the setup-frame stand-in pointer is the flag sd_setup), dc_chain_data, dc_mediainfo (offsets into dc_srom instead of pointers), dc_type, dc_mii_frame, the SROM leaf and block structs, struct dc_softc with DC_IS_*/DC_HAS_BROKEN_RXSTATE predicates and CSR/DC_SETBIT/DC_CLRBIT/DC_PN_GPIO_* accessors, DC_RXBYTES, DC_INC, DC_SP_FIELD; SRM_MEDIA (alpha) not defined; test-ref of every define"
 
 [[file]]
 c = "sys/dev/ic/dc.c"
