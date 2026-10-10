@@ -118,6 +118,54 @@ cargo xtask ports drift --diff      # what changed upstream among ported files
 git commit -m "reference: bump OpenBSD pin to <12-hex>"
 ```
 
+## Who ports: the agents
+
+Since 2026-10-09 the porting is done by Claude Code subagents with fixed roles, defined in
+`.claude/agents/` and sharing one contract, `.claude/rules/subagents.md` (setup in a worktree,
+the machine lock, the long-run watcher, when to stop, what to report). Before that, every launch
+carried the same rules in a hand-written prompt; 196 of them had been written when the roles
+were extracted from them.
+
+| Agent | Model | Does |
+|---|---|---|
+| `milestone-coordinator` | opus | a (sub-)milestone: probe OpenBSD 8.0, split, launch, integrate, close CI and docs |
+| `porter` | opus | a delicate port: uvm, pmap, traps, MP, drivers with DMA or interrupts, any `.c` over 3,000 lines |
+| `porter-mechanical` | sonnet | headers of constants and structs, small leaf functions, tables, `ports.toml` rows |
+| `integrator` | opus | merge agent branches, resolve the shared tables (`ports.toml`, `ioconf.rs`, the justfile), `just ci` |
+| `debugger` | opus | the root cause of a failing or flaky smoke or test, fixed without weakening an expectation |
+| `reviewer` | opus | a read-only review of a branch: faithfulness to the C, `unsafe`, rules, security |
+| `external-bugs` | opus | verify the OpenBSD C slips the ports met, for `docs/EXTERNAL_BUGS.md` |
+| `openbsd-probe` | sonnet | boot the real OpenBSD 8.0 on a QEMU setup and report what it does |
+| `image-worker` | sonnet | view, crop, resize images, so the coordinator's context stays small |
+
+Six of them keep a memory, `.claude/agent-memory/<agent>/MEMORY.md`: one line per lesson that
+outlives a run (an idiom that took two attempts, a known flake, a conflict pattern), committed
+with the tree so the whole team of agents learns. An agent in a worktree writes it on its branch;
+the `integrator` keeps both sides on merge. Task state lives in a `HANDOFF.md`, never in memory.
+The `reviewer` has no memory on purpose: every change gets fresh eyes.
+
+`/port <files | milestone>` (`.claude/workflows/port.js`) runs the loop above as one workflow:
+plan the clusters (leaf dependencies folded in, a big file alone), one porter per cluster in its
+own worktree (at most four at once), a reviewer per branch with one fix round, then an integrator
+that merges the approved branches and runs `just ci`. Its result is a branch; `main` moves only
+by hand, after the user's OK. Running it is the user's decision, never the model's.
+
+## Measuring progress
+
+`/progress [milestone]` (`.claude/skills/progress/`) prints one row per ROADMAP milestone,
+computed when asked from `ports.toml`, `docs/ROADMAP.md`, the reference tree and git: files
+ported and left, C lines ported and left (`wc -l` at the pin), Rust lines, and the time the rest
+would take at the project's own average of C lines per active day. Its conventions:
+
+- a `wip` row counts whole as left; a `skipped` row counts nowhere;
+- a parent milestone (M9, M10, M11, M16) shows its own rows plus its lettered children's;
+- "unclaimed" is C the ROADMAP scope names in backticks with no `ports.toml` row yet, resolved
+  in the reference tree: an estimate from prose, marked so;
+- the time column is a linear extrapolation of the past; it promises nothing.
+
+The numbers in README, STATUS and JOURNAL do not come from it: they come from
+`cargo xtask ports status` and the git commands `docs/JOURNAL.md` names.
+
 ## Measuring unsafe
 
 `cargo xtask unsafe-report` (M12+) counts the `unsafe` keywords of the kernel crates (`sys/`,

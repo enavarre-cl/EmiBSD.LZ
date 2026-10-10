@@ -123,6 +123,11 @@ Details: `.claude/rules/porting-workflow.md` and `docs/PORTING.md`.
 - `docs/SETUP.md`: toolchain, QEMU and Limine on macOS.
 - `docs/EXTERNAL_BUGS.md`: bugs of OpenBSD's C, QEMU, EDK2 and the host tools met on the way, for
   the user to report upstream.
+- `.claude/agents/`: the subagent roles (`milestone-coordinator`, `porter`, `porter-mechanical`,
+  `integrator`, `debugger`, `reviewer`, `external-bugs`, `openbsd-probe`, `image-worker`); launch
+  them by `subagent_type`; their lessons persist in `.claude/agent-memory/<agent>/`. The shared
+  contract is `.claude/rules/subagents.md`. `/port <files>` (`.claude/workflows/port.js`) runs a
+  whole port batch through them; `/progress` (`.claude/skills/progress/`) measures the port.
 - `docs/STATUS.md` and `reference/PINNED.md` are imported below, so they are always in context.
 
 @docs/STATUS.md

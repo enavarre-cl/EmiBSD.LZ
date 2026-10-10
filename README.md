@@ -453,6 +453,7 @@ init/                   the Rust init, now the kernel's self-test
 tools/xtask/            images, QEMU, smoke tests, userland build, ports tracker
 docs/                   architecture, porting, roadmap, setup, status
 ports.toml              porting tracker
+.claude/                rules, agent roles, the /port workflow, the /progress skill, agent memory
 ```
 
 ## Documentation
@@ -468,6 +469,8 @@ ports.toml              porting tracker
 | What happens after the faithful port? | [docs/PHASE2.md](docs/PHASE2.md) (draft) |
 | Where are we right now? | [docs/STATUS.md](docs/STATUS.md) |
 | What rules does every change follow? | [CLAUDE.md](CLAUDE.md), [.claude/rules/](.claude/rules/) |
+| Who does the porting, and how is a batch run? | [docs/PORTING.md](docs/PORTING.md) ("Who ports"), [.claude/agents/](.claude/agents/) |
+| How far is the port? | `/progress` in Claude Code; the method in [docs/PORTING.md](docs/PORTING.md) ("Measuring progress") |
 
 ## Contributing and workflow
 
@@ -488,6 +491,12 @@ Upstream: sys/kern/subr_prf.c@3ce1f3f79392
 ```
 
 The full process is in [docs/PORTING.md](docs/PORTING.md).
+
+Most of the porting is done by Claude Code subagents with fixed roles ([.claude/agents/](.claude/agents/):
+`porter`, `porter-mechanical`, `reviewer`, `integrator`, `debugger`, `milestone-coordinator`, ...)
+under one contract, [.claude/rules/subagents.md](.claude/rules/subagents.md). `/port <files>` runs a batch
+through them (plan, port in worktrees, review, integrate, `just ci`) and `/progress` measures the port per
+milestone; their lessons persist in [.claude/agent-memory/](.claude/agent-memory/).
 
 Feedback is welcome: [GitHub Discussions](https://github.com/enavarre-cl/EmiBSD/discussions) for
 feedback and design questions, [Issues](https://github.com/enavarre-cl/EmiBSD/issues) for concrete

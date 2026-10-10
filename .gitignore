@@ -2,3 +2,6 @@
 /reference/openbsd-src/
 *.img
 .DS_Store
+
+# Python byte code (the /progress skill script)
+__pycache__/
