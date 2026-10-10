@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  EmiBSD lab: TFTP for the Raspberry Pi 4 and the PC, on the isolated lab network only.
+  macOS tftpd chrooted to /private/tftpboot (so efiboot's absolute "/bsd" resolves there),
+  running as enavarre after the chroot, listening on 10.77.0.1 only.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>org.emibsd.lab.tftpd</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/libexec/tftpd</string>
+		<string>-l</string>
+		<string>-s</string>
+		<string>/private/tftpboot</string>
+		<string>-u</string>
+		<string>enavarre</string>
+	</array>
+	<key>inetdCompatibility</key>
+	<dict>
+		<key>Wait</key>
+		<true/>
+	</dict>
+	<key>InitGroups</key>
+	<true/>
+	<key>Sockets</key>
+	<dict>
+		<key>Listeners</key>
+		<dict>
+			<key>SockNodeName</key>
+			<string>10.77.0.1</string>
+			<key>SockServiceName</key>
+			<string>tftp</string>
+			<key>SockType</key>
+			<string>dgram</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

@@ -1,0 +1,11 @@
+# Host side of the relay box (tools/lab/relayctl): switches the Arduino's relays from the Mac.
+# Standalone on purpose: not a workspace member and no dependencies (std only).
+[package]
+name = "relay"
+version = "0.0.1"
+edition = "2024"
+license = "ISC"
+publish = false
+
+# Keep it out of the repository's workspace.
+[workspace]
