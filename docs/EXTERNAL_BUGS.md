@@ -82,6 +82,8 @@ means EmiBSD's code has it too ("Bugs the port reproduces").
 | EXT-58 | `sys/isofs/udf/udf_vnops.c:1252` | embedded file data ignores the offset | user | wrong result | read | fixed | open |
 | EXT-61 | `sys/isofs/udf/udf_vnops.c:816` | `udf_readdir` returns ERESTART for ever | user | wrong result | read | same fault (see below) | open |
 | EXT-73 | `sys/scsi/cd.c:1409` | `cd_play_tracks` indexes the TOC with a user track | user | wrong result | read | fixed | open |
+| EXT-223 | `usr.sbin/makefs/msdos.c:143` | makefs exits 0 when the FAT cannot be made, leaving an image of zeros | user | wrong result | reproduced | `distrib.rs` checks the boot sector | open |
+| EXT-224 | `usr.sbin/makefs/msdos/mkfs_msdos.c:763` | with `sectors_per_track` and `drive_heads` both given, the image's size is never taken | user | wrong result | reproduced | `distrib.rs` gives `drive_heads` only | open |
 | EXT-158 | `sys/dev/wscons/wsemul_vt100.c:1087` | eleventh CSI argument touches `args[10]` | user | cosmetic | read | fixed | open |
 | EXT-160 | `sys/dev/rasops/rasops8.c:136` | glyph rows read 4 bytes past the font | user | cosmetic | read | fixed | open |
 | EXT-46 | `sys/ntfs/ntfs_compr.c:98` | 4 KB blocks written into a smaller unit buffer | device | memory corruption | read | panics instead | open |
@@ -2860,3 +2862,40 @@ Every C line in this and the following sections is at the pin 3ce1f3f79392, unde
 - Port's handling: `sys/lib/libsa/netudp.rs:73` drops it.
 - Severity: cosmetic (an out-of-bounds read whose result is discarded).
 - Fix: drop when `uh_ulen` exceeds what was received.
+
+## host tools
+
+OpenBSD's userland built for the Mac to make the images (`just userland`), unmodified but
+for the host shims of `tools/xtask/src/userland/ramdisk.rs`.
+
+### EXT-223: makefs exits 0 when the FAT cannot be made
+
+- Where: `usr.sbin/makefs/msdos.c:143`, `msdos_makefs`.
+- What: `if (mkfs_msdos(image, NULL, msdos_opt) == -1) return;` (143-144): `make_fs` is
+  `void`, so `main` goes on to `exit(0)` (`usr.sbin/makefs/makefs.c:211-215`) after
+  mkfs_msdos's warning, with the image file created and full of zeros.
+- Seen (M16g): `makefs -t msdos -o fat_type=12,sectors_per_cluster=8,sectors_per_track=63,
+  drive_heads=1 -s 491520 IMG DIR` prints `makefs: meta data exceeds file system size`
+  and exits 0; IMG is 491520 zero bytes.
+- Reach: user (whoever runs makefs; a release build would ship the empty image).
+- Verified: reproduced (the host build at the pin).
+- Port's handling: `tools/xtask/src/distrib.rs` (`check_fat`) checks every FAT image's boot
+  sector after makefs.
+- Severity: wrong result.
+- Fix: `errx` there, or return the failure to `main` and exit non-zero.
+
+### EXT-224: mkfs_msdos ignores the image's size when the geometry is given
+
+- Where: `usr.sbin/makefs/msdos/mkfs_msdos.c:763`, `getbpbinfo`.
+- What: the sector count comes from the image only inside `if (... !bpb->bps ||
+  !bpb->spt || !bpb->hds)` (763; `bpb->bsec = size`, 807). makefs always sets the bytes a
+  sector (`msdos.c:130-133`), so with `sectors_per_track` and `drive_heads` both given the
+  branch is skipped, `bsec` stays 0 unless `size` is, and `create_size`/`-s` are not used:
+  `meta data exceeds file system size` (520). newfs_msdos takes the size from the disk
+  label instead, so only makefs has it.
+- Reach: user.
+- Verified: reproduced (the command of EXT-223; with `drive_heads=1` alone the same image is
+  made, 63 sectors a track being the default).
+- Port's handling: `tools/xtask/src/distrib.rs` gives `drive_heads` only.
+- Severity: wrong result.
+- Fix: take the size from the image whenever `bsec` is 0.
