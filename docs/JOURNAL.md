@@ -1212,3 +1212,71 @@ probed OpenBSD 8.0 and ported vmwpvs itself.
 Effort: _(user)_
 
 Time: _(user)_
+
+## M16g Install images
+
+Boundary: the commit that marks M16g and M16 met ("docs: M16g and M16 met"), after the work
+commit ("xtask: make install80.img and cd80.iso, add their smokes"); both on a coordinator
+branch from main `6e866cbd`, with no subagent: the work was one xtask module pair
+(`distrib.rs`, `iso9660.rs`) and the smokes, small enough for the coordinator.
+
+- Went well: OpenBSD's own images as the reference. The `diff-openbsd` snapshot holds both
+  archs' `install80.img`; their MBR, disklabel and FAT boot sector, read with a short script,
+  gave the exact layout the Makefiles describe (fdisk's `-l` geometry, the vnd label, the
+  FAT parameters), and the module's tests pin those bytes. The OpenBSD 8.0 image then went on
+  the same USB stick with the same answers (`install80 --image`): the same questions in the
+  same order on both archs, one more on ours (amd64's `An EFI/GPT disk may not boot.
+  Proceed?`, efi(4) not being ported).
+- Went well: the interactive install. `Vm::respond_in_turn` types the answers a person would
+  (a question asked twice gets its answers in turn, an unknown question fails at once), so
+  the image is the release's, untouched, and nothing comes over the network. Both archs
+  installed and booted to `hello from cc 42` on the first run (amd64 115 s, arm64 151 s).
+- Went well: the ISO 9660 writer. mkhybrid is not in the clone, so `iso9660.rs` writes the
+  image (path tables, Rock Ridge with `SP` and `ER` through `CE`, which the kernel requires,
+  `TRANS.TBL`, El Torito); efiboot found `cd0`, read `boot.conf` and booted `bsd.rd` from it
+  the first time, and the kernel's mount_cd9660 lists the Rock Ridge names.
+- Failed: `smoke-cd80`'s first run inside `just ci`, four smokes at a time: after `set tty
+  com0`, the `boot` typed at efiboot's prompt reached it as `b` alone and efiboot waited for
+  the rest of the line until the limit (eleven minutes, 561 serial bytes). The prompt lines are
+  now typed a character at a time, each again if its echo does not come back
+  (`type_echoed`); the same smoke then passed four at a time.
+- Failed: makefs, twice (EXT-223, EXT-224): with `sectors_per_track` and `drive_heads` both
+  given, mkfs_msdos takes no size from the image and fails, and makefs exits 0 with an image
+  of zeros. Found by the FAT check `distrib.rs` makes after makefs.
+- Failed: `just comp` in the worktree. main's comp tree, seeded by APFS clone, was built at
+  the pre-rename checkout (`~/devel/EmiBSD`): 202 dangling symbolic links and 6700 build
+  records with the old path, so a generator's `ln -s` failed. Rebased by a one-off script in
+  the worktree (main's tree still has the old paths).
+- Rules: testing.md lists `smoke-install80-<arch>` in `ci-full`; xtask.md gains `distrib.rs`
+  and `iso9660.rs`. M16g's close was gated by `just ci-full` alone, the user's decision of
+  2026-10-09 to skip a separate two-CPU `just ci` for M16g.
+- Numbers: smoke recipes 98 (`smoke-cd80` in `smokes`; `smoke-install80`, `-amd64`,
+  `-arm64` in `ci-full`); xtask tests +9; no kernel change (ports and unsafe-report totals as
+  at M16a). `just ci-full` rc=0 in 30m12s (84 of 84 smokes on `-smp 4` in 16m57s, the six M14c install recipes, `smoke-install80-amd64` in 71 s and `smoke-install80-arm64` in 128 s); `just diff-openbsd` rc=0: 102 steps, 99 equal, 3 expected, 0 unexpected, on both archs.
+
+Effort: _(user)_
+
+Time: _(user)_
+
+## M16 QEMU drivers
+
+Boundary: the commit that marks M16g and M16 met. Range: M15's boundary `50a816b` to it;
+the seven parts were met as M16f, M16e, M16b, M16c, M16d, M16a and M16g, from 2026-10-08 to
+2026-10-09.
+
+- Went well: probing OpenBSD 8.0 first (`diff-openbsd probe`, M16e on). Every device was
+  booted on the OpenBSD snapshot with the smokes' QEMU options before the port, which settled
+  what "faithful" means on QEMU, restated four criteria with evidence (ehci/ohci, tulip/igb,
+  pvscsi) and moved four storage drivers to M17 (mfi, mfii, pcscp, ufshci: OpenBSD 8.0 itself
+  fails on those QEMU devices, EXT-192 to EXT-194).
+- Went well: parallel parts in worktrees, two at a time (M16d beside M16a), each closing with
+  `just ci`; `docs/EXTERNAL_BUGS.md` grew from the bugs the ports met (EXT-1 to EXT-224).
+- Failed: long runs left hanging (a recipe frozen 2 h 30 min in macOS's loader, EXT-2; a
+  test run found hung after its agent handed back): `smoke-all`'s outer watchdog, the
+  ten-minute still-log watcher and the stop-everything-before-hand-back rule came from them.
+- Numbers (from git, `50a816b..` the boundary): 139 non-merge commits with this one;
+  ported 975 → 1169; tests 2635 → 3156; smoke recipes 61 → 98. `just ci-full` rc=0 in 30m12s (84 of 84 smokes on `-smp 4` in 16m57s, the six M14c install recipes, `smoke-install80-amd64` in 71 s and `smoke-install80-arm64` in 128 s); `just diff-openbsd` rc=0: 102 steps, 99 equal, 3 expected, 0 unexpected, on both archs.
+
+Effort: _(user)_
+
+Time: _(user)_

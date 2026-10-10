@@ -24,10 +24,9 @@
 
 ## Status
 
-Status: M16a (storage drivers: IDE with pciide and wd, mpi, vmwpvs, sdhc with the sdmmc stack,
-the floppy with ISA DMA), M16d (console, virtio and legacy devices), M16c (network drivers),
-M16b (USB drivers), M16e (platform drivers) and M16f (arm64 platform) met; the last part of
-M16 (M16g: install images) under way.
+Status: M16 (QEMU drivers) met with its last part, M16g (install images: `install80.img` on
+both archs and amd64's `cd80.iso`, as `distrib/` makes them; an install from the stick with no
+HTTP server); M17 (real hardware and virtualisation) next.
 
 | Milestone | Scope | State |
 |---|---|---|
@@ -64,7 +63,7 @@ M16 (M16g: install images) under way.
 | M16c | Network drivers: pcn(4), ne(4) (ne2000, dp8390, rtl80x9), fxp(4) with loadfirmware(9) and its microcode, dc(4); the inphy, lxtphy and dcphy PHYs; em(4) on igb and e1000e. tulip and igb pass no traffic, as on OpenBSD 8.0 in QEMU | met |
 | M16d | Console, virtio and legacy devices: pckbc(4), pckbd(4) and pms(4); viogpu(4), viomb(4), viornd(4) with rnd(4)'s entropy pool and /dev/random, viocon(4) (cargo feature); lpt(4); pcppi(4) and spkr(4); eap(4) with midi(4) | met |
 | M16a | Storage drivers: pciide(4) with every chip of its table, wdc and wd(4) (`wd0` on PIIX3), mpi(4) on mptsas1068, sdhc(4) with the sdmmc(4) stack on sdhci-pci, fd(4) and fdc(4) with isadma(4); vmwpvs(4) behaves as on OpenBSD 8.0. mfi, mfii, pcscp and ufshci moved to M17: OpenBSD 8.0 itself fails on QEMU's devices | met |
-| M16g | QEMU drivers, the last part: install images | next |
+| M16g | Install images: `install80.img` (both archs) and `cd80.iso` (amd64) laid out as `distrib/` makes them, the ISO 9660 image written by xtask; OpenBSD's installer, answered over the console, installs from the stick with no HTTP server; the CD boots to the installer | met |
 | M17 | Real hardware and virtualisation (vmm, vmd; optional) | next |
 
 Stage 2 of the diagnostic tools (ps, fstat, vmstat, df) is also met. Exit criteria and dates are
@@ -195,6 +194,9 @@ On one VM, with OpenBSD's own binaries from the ramdisk:
 - Legacy devices, amd64: bytes written to `/dev/lpt0` reach QEMU's parallel port (`smoke-lpt`);
   the console bell and a spkr(4) tune reach QEMU's PC speaker through pcppi(4) (`smoke-bell`);
   eap(4) plays the tone on QEMU's ES1370, with midi0 on its UART (`smoke-eap`).
+- The boot-only CD, amd64: `cd80.iso` as q35's CD-ROM boots our efiboot from its El Torito
+  image, then `bsd.rd` from the CD, to the installer's first question; mount_cd9660(8)
+  lists the CD by its Rock Ridge names (`smoke-cd80`).
 
 Outside `just smoke`, because they take minutes under TCG (the user requires them at every
 milestone close): `just smoke-install` boots `bsd.rd` through our efiboot and lets OpenBSD's
@@ -202,6 +204,9 @@ milestone close): `just smoke-install` boots `bsd.rd` through our efiboot and le
 fresh disk (amd64, arm64, and arm64 on ACPI); `just smoke-install-boot-<arch>` boots that
 disk on a fresh VM through the efiboot installboot(8) put on it, OpenBSD's `/etc/rc` runs,
 and `cc hello.c && ./a.out` prints its line with OpenBSD's clang (`just comp` builds it).
+`just smoke-install80-<arch>` (M16g) does the same from `install80.img` attached as a USB
+stick, OpenBSD's installer answered over the serial console as a person would and the sets
+read from the stick: no response file, no network, no HTTP server.
 
 Between two VMs on a private link (`cargo xtask smoke2`):
 
